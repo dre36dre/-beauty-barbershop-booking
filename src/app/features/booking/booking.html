@@ -1,0 +1,140 @@
+<main class="booking-page">
+  <header class="page-header">
+    <a class="back-link" routerLink="/" aria-label="Voltar à página inicial">← <span>Início</span></a>
+    <a class="wordmark" routerLink="/">Vanessa <span>Souza</span><small>NÚCLEO DA BELEZA</small></a>
+    <span class="header-note">AGENDAMENTO ONLINE</span>
+  </header>
+
+  <section class="booking-shell">
+    @if (success) {
+      <div class="success-card" role="status">
+        <span class="success-mark" aria-hidden="true">✓</span>
+        <p class="section-kicker">AGENDAMENTO CONFIRMADO</p>
+        <h1>Prontinho, {{ client.nome }}!</h1>
+        <p>Seu horário foi reservado com sucesso.</p>
+        <div class="success-details">
+          <span>Protocolo <strong>#{{ success.id }}</strong></span>
+          <span>Data <strong>{{ selectedDate | date:'dd/MM/yyyy' }}</strong></span>
+          <span>Horário <strong>{{ selectedTime }}</strong></span>
+          <div class="confirmed-services"><h2>Serviços e subtotais</h2>
+            @for (service of selectedServiceDetails; track service.id) {
+              <div class="confirmed-service"><span>{{ service.nome }}</span><strong>{{ formatPrice(service.preco) }}</strong></div>
+            }
+          </div>
+          <div class="confirmed-total"><span>Subtotal</span><strong>{{ formatPrice(summary?.valor_total ?? success.valor_total) }}</strong><span>Total</span><strong>{{ formatPrice(success.valor_total) }}</strong></div>
+        </div>
+        <a class="primary-button" routerLink="/">Voltar ao início</a>
+      </div>
+    } @else {
+      <div class="intro-block">
+        <p class="section-kicker">SEU MOMENTO DE CUIDADO</p>
+        <h1>Agende seu horário</h1>
+        <p>Escolha seus serviços e encontre o melhor horário para você.</p>
+      </div>
+
+      @if (errorMessage) {
+        <div class="error-message" role="alert">{{ errorMessage }}</div>
+      }
+
+      <form (ngSubmit)="submitBooking()">
+        <section class="form-section">
+          <div class="section-heading"><span>01</span><div><h2>Escolha os serviços</h2><p>Você pode selecionar mais de um.</p></div></div>
+          <div class="service-workspace">
+            <div class="service-chooser">
+              <div class="service-guide" aria-label="Especialidades do salão">
+                <div class="category-grid">
+                  @for (category of serviceCategories; track category.title; let index = $index) {
+                    <div class="category-card">
+                      <span class="category-number">0{{ index + 1 }}</span>
+                      <h3>{{ category.title }}</h3>
+                      <p>{{ category.items }}</p>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <div class="services-header-bar">
+                <span class="all-services-badge">Todos os serviços</span>
+                <p class="catalog-note">Selecione abaixo os serviços desejados. Ao clicar em um serviço, ele será adicionado automaticamente em <strong>Seu resumo</strong>.</p>
+              </div>
+
+              @if (loadingServices) {
+                <p class="helper-message">Carregando serviços…</p>
+              } @else if (visibleServices.length) {
+                <div class="service-list">
+                  @for (service of visibleServices; track service.id) {
+                    <label class="service-option" [class.selected]="isSelected(service.id)">
+                      <input type="checkbox" [checked]="isSelected(service.id)" (change)="toggleService(service.id, $event)">
+                      <span class="checkmark" aria-hidden="true">✓</span>
+                      <span class="service-copy">
+                        <strong>{{ service.nome }}</strong>
+                        <small>{{ service.duracao }} min@if (service.descricao) { · {{ service.descricao }}}</small>
+                      </span>
+                      <strong class="service-price">{{ formatPrice(service.preco) }}</strong>
+                    </label>
+                  }
+                </div>
+              } @else {
+                <p class="helper-message">Ainda não há serviços cadastrados.</p>
+              }
+            </div>
+
+            <aside class="live-summary" aria-live="polite" aria-label="Resumo dos serviços selecionados">
+              <h3>Seu resumo</h3>
+              @if (selectedServiceDetails.length) {
+                <div class="live-service-list">
+                  @for (service of selectedServiceDetails; track service.id) {
+                    <div class="live-service">
+                      <span>{{ service.nome }}</span>
+                      <div class="live-service-meta">
+                        <strong>{{ formatPrice(service.preco) }}</strong>
+                        <button type="button" class="remove-service-btn" (click)="removeService(service.id)" aria-label="Remover serviço {{ service.nome }}">✕</button>
+                      </div>
+                    </div>
+                  }
+                </div>
+                @if (summary) { <p class="summary-duration">Duração total: {{ summary.duracao_total }} min</p> }
+                <div class="live-total"><span>Subtotal</span><strong>{{ formatPrice(selectedSubtotal) }}</strong></div>
+                <div class="live-total"><span>Total</span><strong>{{ formatPrice(summary?.valor_total ?? selectedSubtotal.toFixed(2)) }}</strong></div>
+              } @else {
+                <p class="empty-summary">Os serviços escolhidos aparecerão aqui.</p>
+              }
+            </aside>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <div class="section-heading"><span>02</span><div><h2>Selecionar horário</h2><p>Escolha uma data e veja os horários livres dentro do funcionamento do salão.</p></div></div>
+          <div class="opening-hours" aria-label="Horário de funcionamento">
+            <h3>Horário de funcionamento</h3>
+            @for (schedule of openingHours; track schedule.days) {
+              <div><span>{{ schedule.days }}</span><strong [class.closed]="schedule.hours === 'Fechado'">{{ schedule.hours }}</strong></div>
+            }
+          </div>
+          <div class="schedule-selection">
+            <label class="field date-field"><span>Data (terça a sábado)</span><input type="date" name="data" [min]="minimumDate" [(ngModel)]="selectedDate" (ngModelChange)="onDateChange()" required></label>
+            <label class="field time-select-field"><span>Selecionar horário</span><select name="horario" size="6" [ngModel]="selectedTime" (ngModelChange)="selectTime($event)" required>@for (option of timeOptions; track option.time) { <option [value]="option.time">{{ option.time }}</option> }</select></label>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <div class="section-heading"><span>03</span><div><h2>Seus dados</h2><p>Precisamos dessas informações para confirmar o agendamento.</p></div></div>
+          <div class="field-grid">
+            <label class="field full-width"><span>Nome completo</span><input type="text" name="nome" [(ngModel)]="client.nome" autocomplete="name" maxlength="100" required></label>
+            <label class="field"><span>Telefone</span><input type="tel" name="telefone" [(ngModel)]="client.telefone" autocomplete="tel" maxlength="20" required></label>
+            <label class="field"><span>E-mail</span><input type="email" name="email" [(ngModel)]="client.email" autocomplete="email" required></label>
+            <label class="field full-width"><span>Endereço</span><input type="text" name="endereco" [(ngModel)]="client.endereco" autocomplete="street-address" maxlength="255" required></label>
+          </div>
+        </section>
+
+        <div class="form-actions">
+          <a class="cancel-link" routerLink="/">Voltar</a>
+          <button class="primary-button" type="submit" [disabled]="submitting || loadingServices || !services.length">
+            {{ submitting ? 'Confirmando…' : 'Confirmar agendamento' }} <span aria-hidden="true">↗</span>
+          </button>
+        </div>
+        <p class="privacy-note">Seus dados são usados somente para realizar o agendamento.</p>
+      </form>
+    }
+  </section>
+</main>

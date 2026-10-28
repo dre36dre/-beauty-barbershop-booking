@@ -1,21 +1,70 @@
-.home {
-  text-align: center;
-  padding: 80px 20px;
+:host { display: block; min-height: 100vh; }
+
+.landing {
+  position: relative;
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  overflow: hidden;
+  padding: clamp(24px, 6vw, 72px);
+  color: #f7f1f1;
+  background: radial-gradient(ellipse at 50% 47%, #24191c 0%, #141214 44%, #0c0b0d 100%);
 }
 
-h1 {
-  font-size: 40px;
-  margin-bottom: 16px;
+.welcome-card {
+  position: relative;
+  isolation: isolate;
+  width: min(100%, 1000px);
+  overflow: hidden;
+  border: 1px solid rgb(231 180 181 / 25%);
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgb(30 27 30 / 97%), rgb(16 15 17 / 99%) 52%, rgb(27 20 22 / 98%));
+  box-shadow: 0 32px 100px rgb(0 0 0 / 58%), 0 0 60px rgb(161 60 74 / 9%), inset 0 0 70px rgb(255 255 255 / 2%);
 }
 
-p {
-  font-size: 20px;
-  margin-bottom: 30px;
-}
+.card-glow { position: absolute; z-index: -1; inset: 0; background: radial-gradient(ellipse at 50% 5%, rgb(180 71 83 / 11%), transparent 52%); pointer-events: none; }
 
-button {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+.card-content { display: flex; flex-direction: column; align-items: center; padding: clamp(40px, 8vw, 78px) clamp(22px, 7vw, 76px) 32px; text-align: center; }
+.eyebrow { display: flex; align-items: center; gap: 14px; margin: 0 0 19px; color: #d4b2ae; font-size: 10px; font-weight: 600; letter-spacing: .24em; line-height: 1.6; text-transform: uppercase; }
+.eyebrow span { width: 28px; height: 1px; background: #a84d58; }
+
+h1 { margin: 0; color: #e17a83; font-family: 'Brush Script MT', 'Segoe Script', 'URW Chancery L', cursive; font-size: clamp(70px, 12vw, 124px); font-weight: 500; letter-spacing: -.055em; line-height: .98; text-shadow: 0 3px 22px rgb(212 76 89 / 17%); }
+h1 span { color: #f0b3b1; }
+.brand-divider { display: flex; align-items: center; justify-content: center; gap: clamp(10px, 2vw, 22px); width: 100%; margin-top: 24px; }
+.atom { color: #e7c9ca; font-size: 21px; }
+.divider-line { width: clamp(22px, 5vw, 70px); height: 1px; background: linear-gradient(90deg, transparent, rgb(208 140 144 / 55%)); }
+.divider-line:nth-of-type(4) { transform: rotate(180deg); }
+.brand-subtitle { color: #f0e6e6; font-family: 'Brush Script MT', 'Segoe Script', 'URW Chancery L', cursive; font-size: clamp(25px, 4vw, 39px); font-style: italic; white-space: nowrap; }
+.intro { margin: 24px 0 28px; color: #c6bbbc; font-size: clamp(14px, 2vw, 16px); font-weight: 300; line-height: 1.8; }
+
+.booking-button { display: inline-flex; min-height: 52px; align-items: center; justify-content: center; gap: 12px; padding: 0 25px; border: 1px solid #cb7077; border-radius: 3px; background: linear-gradient(135deg, #a8414e, #812f3b); color: #fff8f7; font-size: 14px; font-weight: 600; letter-spacing: .025em; text-decoration: none; transition: transform .2s ease, box-shadow .2s ease; }
+.booking-button svg { width: 19px; fill: currentColor; }
+.booking-button span { margin-left: 8px; font-size: 18px; }
+.booking-button:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgb(132 47 59 / 43%); }
+
+.ornament { display: flex; width: min(100%, 430px); align-items: center; gap: 16px; margin: 37px 0 24px; color: #cf9298; }
+.ornament span { height: 1px; flex: 1; background: linear-gradient(90deg, transparent, rgb(191 119 127 / 50%)); }
+.ornament span:last-child { transform: rotate(180deg); }
+.ornament i { font-size: 12px; font-style: normal; }
+.contact-row { display: flex; align-items: center; justify-content: center; gap: clamp(14px, 4vw, 34px); }
+.contact-link { display: inline-flex; align-items: center; gap: 10px; color: #f1e9e9; font-size: clamp(12px, 1.7vw, 15px); font-weight: 600; letter-spacing: .035em; text-decoration: none; transition: color .18s ease; }
+.contact-link:hover { color: #f1a5aa; }
+.contact-icon { display: inline-grid; width: 29px; height: 29px; flex: 0 0 29px; place-items: center; border-radius: 50%; background: #287c5d; }
+.contact-icon svg { width: 16px; height: 16px; fill: #fff; }
+.contact-separator { width: 1px; height: 23px; background: rgb(231 180 181 / 25%); }
+.instagram-icon { border-radius: 8px; background: linear-gradient(135deg, #7555aa, #cf4b77 60%, #ef9c48); }
+.instagram-icon svg { fill: none; stroke: #fff; stroke-width: 2; }
+.instagram-icon .dot { fill: #fff; stroke: none; }
+.footer-note { margin: 31px 0 0; color: #8d7e80; font-size: 9px; font-weight: 600; letter-spacing: .2em; }
+.footer-note span { padding: 0 7px; color: #c4787d; }
+
+@media (max-width: 560px) {
+  .landing { min-height: 100svh; padding: 18px 14px; }
+  .card-content { padding: 44px 17px 25px; }
+  .eyebrow { gap: 8px; font-size: 8px; letter-spacing: .16em; }
+  .eyebrow span { width: 17px; }
+  .intro { margin: 21px 0 24px; }
+  .contact-row { flex-direction: column; gap: 15px; }
+  .contact-separator { width: 72px; height: 1px; }
+  .footer-note { font-size: 7px; letter-spacing: .14em; }
 }

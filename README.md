@@ -12,6 +12,10 @@ ng serve
 
 Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
+## Booking API
+
+The `/agendar` page uses the Django API. Start the backend from `Barbearia` on `http://localhost:8000`, then run the Angular development server. `proxy.conf.json` forwards local `/api` requests to Django. For deployment, set the `api-base-url` meta tag in `src/index.html` to the public API origin.
+
 ## Code scaffolding
 
 Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
