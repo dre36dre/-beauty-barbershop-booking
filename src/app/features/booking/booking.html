@@ -33,7 +33,11 @@
       </div>
 
       @if (errorMessage) {
-        <div class="error-message" role="alert">{{ errorMessage }}</div>
+        <div class="error-toast" role="alert" (click)="errorMessage = ''">
+          <span class="error-toast-icon">⚠</span>
+          <span>{{ errorMessage }}</span>
+          <button type="button" class="error-toast-close" aria-label="Fechar">✕</button>
+        </div>
       }
 
       <form (ngSubmit)="submitBooking()">
