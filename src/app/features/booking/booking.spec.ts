@@ -83,5 +83,32 @@ describe('Booking Component', () => {
       expect(card.getAttribute('role')).not.toBe('button');
     }
   });
+
+  it('should identify past times correctly for today and reject booking past times', () => {
+    const today = component.minimumDate;
+    component.selectedDate = today;
+
+    // Horário passado garantido (ex: 08:00 antes da abertura ou hora atual - 1)
+    const now = new Date();
+    const pastHour = Math.max(0, now.getHours() - 1);
+    const pastTimeString = `${String(pastHour).padStart(2, '0')}:00`;
+
+    if (now.getHours() > 0) {
+      expect(component.isPastTime(today, pastTimeString)).toBe(true);
+      component.selectTime(pastTimeString);
+      expect(component.selectedTime).toBe('');
+      expect(component.errorMessage).toContain('passou');
+    }
+  });
+
+  it('should block submitBooking when time has already passed', () => {
+    component.selectedServices = [1];
+    component.selectedDate = component.minimumDate;
+    component.selectedTime = '08:00'; // 08:00 já passou em relação ao horário de funcionamento
+
+    component.submitBooking();
+    expect(component.errorMessage).toContain('passou');
+    expect(component.success).toBeNull();
+  });
 });
 

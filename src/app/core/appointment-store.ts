@@ -60,6 +60,7 @@ export class AppointmentStore {
 
   /** Lista reativa de todos os agendamentos */
   readonly all = this._appointments.asReadonly();
+  readonly appointments = this._appointments.asReadonly();
 
   /** Agendamentos do dia atual */
   readonly today = computed(() => {

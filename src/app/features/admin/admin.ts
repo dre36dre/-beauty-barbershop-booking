@@ -303,10 +303,23 @@ export class Admin implements OnInit, OnDestroy {
     return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
 
+  get minAppointmentTime(): string {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    return `${h}:${m}`;
+  }
+
   openNewAppointmentModal(): void {
+    const now = new Date();
+    // Sugere o próximo bloco de 15 minutos futuro (ex: às 15:27, sugere 15:30)
+    const nextSlotMinutes = Math.ceil((now.getHours() * 60 + now.getMinutes() + 1) / 15) * 15;
+    const h = String(Math.floor(nextSlotMinutes / 60)).padStart(2, '0');
+    const m = String(nextSlotMinutes % 60).padStart(2, '0');
+
     this.newAppointment = {
       nome: '',
-      horario: '10:00',
+      horario: `${h}:${m}`,
       servico: 'Corte Feminino',
       valor: 80,
     };
@@ -322,6 +335,18 @@ export class Admin implements OnInit, OnDestroy {
   saveNewAppointment(): void {
     if (!this.newAppointment.nome.trim() || !this.newAppointment.horario) {
       return;
+    }
+
+    // Bloqueia horários que já passaram para a data de hoje
+    const now = new Date();
+    const [h, m] = this.newAppointment.horario.split(':').map(Number);
+    if (!isNaN(h) && !isNaN(m)) {
+      const timeMinutes = h * 60 + m;
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      if (timeMinutes <= nowMinutes) {
+        alert('Não é possível agendar em um horário que já passou hoje. Por favor, selecione um horário a partir de agora.');
+        return;
+      }
     }
 
     this.store.add({

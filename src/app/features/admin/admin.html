@@ -612,7 +612,7 @@
         </label>
         <label class="modal-field">
           <span>Horário</span>
-          <input type="time" [(ngModel)]="newAppointment.horario" required />
+          <input type="time" [(ngModel)]="newAppointment.horario" [min]="minAppointmentTime" required />
         </label>
         <label class="modal-field">
           <span>Serviço</span>

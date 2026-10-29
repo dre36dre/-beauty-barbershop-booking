@@ -113,7 +113,21 @@
           </div>
           <div class="schedule-selection">
             <label class="field date-field"><span>Data (terça a sábado)</span><input type="date" name="data" [min]="minimumDate" [(ngModel)]="selectedDate" (ngModelChange)="onDateChange()" required></label>
-            <label class="field time-select-field"><span>Selecionar horário</span><select name="horario" size="6" [ngModel]="selectedTime" (ngModelChange)="selectTime($event)" required>@for (option of timeOptions; track option.time) { <option [value]="option.time">{{ option.time }}</option> }</select></label>
+            <label class="field time-select-field">
+              <span>Selecionar horário</span>
+              <select name="horario" size="6" [(ngModel)]="selectedTime" (ngModelChange)="selectTime($event)" required>
+                @for (option of timeOptions; track option.time) {
+                  <option [value]="option.time" [disabled]="!option.available">
+                    {{ option.time }}{{ !option.available ? ' (Indisponível)' : '' }}
+                  </option>
+                }
+                @if (timeOptions.length === 0 && selectedDate) {
+                  <option value="" disabled selected>
+                    {{ isDateToday(selectedDate) ? 'Horários de hoje esgotados (escolha outra data)' : 'Nenhum horário disponível para esta data' }}
+                  </option>
+                }
+              </select>
+            </label>
           </div>
         </section>
 

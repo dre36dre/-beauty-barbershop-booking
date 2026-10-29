@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { forkJoin, map, of, switchMap, timeout } from 'rxjs';
 import { BookingApi, BookingSummary, CreatedBooking, Professional, SalonService } from '../../core/booking-api';
-import { AppointmentStore } from '../../core/appointment-store';
+import { AppointmentStore, AppointmentEntry } from '../../core/appointment-store';
 
 @Component({
   selector: 'app-booking',
@@ -117,14 +117,32 @@ export class Booking implements OnInit {
   success: CreatedBooking | null = null;
 
   get timeOptions(): Array<{ time: string; available: boolean }> {
-    const weekday = this.selectedDate ? new Date(`${this.selectedDate}T12:00:00`).getDay() : 3;
+    if (!this.selectedDate) return [];
+    const parts = this.parseDateParts(this.selectedDate);
+    if (!parts || this.isDatePast(this.selectedDate)) return [];
+
+    const dateObj = new Date(parts.year, parts.month - 1, parts.day);
+    const weekday = dateObj.getDay();
     const closingMinutes = weekday === 3 || weekday === 4 || weekday === 5 ? 18 * 60 + 30 : 18 * 60;
     const options: Array<{ time: string; available: boolean }> = [];
+    const isToday = this.isDateToday(this.selectedDate);
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
     for (let minutes = 10 * 60; minutes <= closingMinutes; minutes += 15) {
+      // Se a data for hoje, horários passados (ex: até 15:27, 15:00 e 15:15) não são exibidos como opções
+      if (isToday && minutes <= currentMinutes) {
+        continue;
+      }
       const hour = String(Math.floor(minutes / 60)).padStart(2, '0');
       const minute = String(minutes % 60).padStart(2, '0');
       const time = `${hour}:${minute}`;
-      options.push({ time, available: this.times.includes(time) });
+
+      const isBooked = this.isTimeBooked(this.selectedDate, time);
+      const isAvailableInTimes = this.times.length === 0 || this.times.includes(time);
+      const available = !isBooked && isAvailableInTimes;
+
+      options.push({ time, available });
     }
     return options;
   }
@@ -205,12 +223,32 @@ export class Booking implements OnInit {
     this.errorMessage = '';
 
     if (this.selectedDate) {
-      const weekday = new Date(`${this.selectedDate}T12:00:00`).getDay();
-      if (weekday === 0 || weekday === 1) {
+      this.minimumDate = this.localDateString(new Date());
+      if (this.isDatePast(this.selectedDate)) {
         this.selectedDate = '';
-        this.errorMessage = 'O salão fecha aos domingos e às segundas-feiras. Escolha outro dia.';
+        this.errorMessage = 'Não é possível agendar para uma data passada. Escolha hoje ou uma data futura.';
         this.cdr.markForCheck();
         return;
+      }
+
+      const parts = this.parseDateParts(this.selectedDate);
+      if (parts) {
+        const weekday = new Date(parts.year, parts.month - 1, parts.day).getDay();
+        if (weekday === 0 || weekday === 1) {
+          this.selectedDate = '';
+          this.errorMessage = 'O salão fecha aos domingos e às segundas-feiras. Escolha outro dia.';
+          this.cdr.markForCheck();
+          return;
+        }
+
+        if (this.isDateToday(this.selectedDate)) {
+          const now = new Date();
+          const currentMinutes = now.getHours() * 60 + now.getMinutes();
+          const closingMinutes = weekday === 3 || weekday === 4 || weekday === 5 ? 18 * 60 + 30 : 18 * 60;
+          if (currentMinutes >= closingMinutes) {
+            this.errorMessage = 'O expediente de hoje já foi encerrado. Por favor, escolha outra data.';
+          }
+        }
       }
     }
 
@@ -219,6 +257,20 @@ export class Booking implements OnInit {
   }
 
   selectTime(time: string): void {
+    if (!time || this.isPastTime(this.selectedDate, time)) {
+      this.selectedTime = '';
+      this.errorMessage = 'Este horário já passou. Por favor, escolha um horário futuro.';
+      this.cdr.markForCheck();
+      return;
+    }
+    if (this.isTimeBooked(this.selectedDate, time)) {
+      this.selectedTime = '';
+      this.errorMessage = 'Este horário já está reservado. Por favor, escolha outro horário.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.errorMessage = '';
     this.selectedTime = time;
     const professionalId = this.professionalsByTime[time]?.[0] ?? this.professionals[0]?.id ?? 1;
     this.selectedProfessional = String(professionalId);
@@ -228,6 +280,18 @@ export class Booking implements OnInit {
   submitBooking(): void {
     if (!this.selectedServices.length || !this.selectedDate || !this.selectedTime) {
       this.errorMessage = 'Escolha os serviços, a data e o horário.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    if (this.isPastTime(this.selectedDate, this.selectedTime)) {
+      this.errorMessage = 'Este horário já passou. Por favor, escolha um horário futuro.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    if (this.isTimeBooked(this.selectedDate, this.selectedTime)) {
+      this.errorMessage = 'Este horário já está reservado. Por favor, escolha outro horário.';
       this.cdr.markForCheck();
       return;
     }
@@ -354,8 +418,11 @@ export class Booking implements OnInit {
             professionalsByTime[time] = [...(professionalsByTime[time] ?? []), professional.id];
           }
         }
+        const validTimes = Object.keys(professionalsByTime).filter(
+          (time) => !this.isPastTime(this.selectedDate, time) && !this.isTimeBooked(this.selectedDate, time)
+        ).sort();
         this.professionalsByTime = professionalsByTime;
-        this.times = Object.keys(professionalsByTime).sort();
+        this.times = validTimes;
         this.loadingOptions = false;
         this.cdr.markForCheck();
       },
@@ -369,21 +436,119 @@ export class Booking implements OnInit {
 
   private setupFallbackTimes(): void {
     this.professionals = [{ id: 1, nome: 'Vanessa Souza' }];
-    const weekday = new Date(`${this.selectedDate}T12:00:00`).getDay();
+    if (!this.selectedDate) {
+      this.times = [];
+      this.loadingOptions = false;
+      this.cdr.markForCheck();
+      return;
+    }
+    const parts = this.parseDateParts(this.selectedDate);
+    if (!parts) {
+      this.times = [];
+      this.loadingOptions = false;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    const weekday = new Date(parts.year, parts.month - 1, parts.day).getDay();
     const closingMinutes = weekday === 3 || weekday === 4 || weekday === 5 ? 18 * 60 + 30 : 18 * 60;
     const fallbackTimes: string[] = [];
     const professionalsByTime: Record<string, number[]> = {};
-    for (let minutes = 10 * 60; minutes <= closingMinutes; minutes += 30) {
+    const isToday = this.isDateToday(this.selectedDate);
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    for (let minutes = 10 * 60; minutes <= closingMinutes; minutes += 15) {
+      if (isToday && minutes <= currentMinutes) {
+        continue;
+      }
       const hour = String(Math.floor(minutes / 60)).padStart(2, '0');
       const minute = String(minutes % 60).padStart(2, '0');
       const time = `${hour}:${minute}`;
-      fallbackTimes.push(time);
-      professionalsByTime[time] = [1];
+
+      if (!this.isTimeBooked(this.selectedDate, time)) {
+        fallbackTimes.push(time);
+        professionalsByTime[time] = [1];
+      }
     }
     this.professionalsByTime = professionalsByTime;
     this.times = fallbackTimes;
     this.loadingOptions = false;
     this.cdr.markForCheck();
+  }
+
+  parseDateParts(dateStr: string): { year: number; month: number; day: number } | null {
+    if (!dateStr) return null;
+    const clean = String(dateStr).trim();
+    if (/^\d{4}-\d{1,2}-\d{1,2}/.test(clean)) {
+      const [y, m, d] = clean.split('T')[0].split('-').map(Number);
+      return { year: y, month: m, day: d };
+    }
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(clean)) {
+      const [d, m, y] = clean.split('T')[0].split('/').map(Number);
+      return { year: y, month: m, day: d };
+    }
+    const parsed = new Date(clean);
+    if (!isNaN(parsed.getTime())) {
+      return { year: parsed.getFullYear(), month: parsed.getMonth() + 1, day: parsed.getDate() };
+    }
+    return null;
+  }
+
+  isDateToday(dateStr: string): boolean {
+    const parts = this.parseDateParts(dateStr);
+    if (!parts) return false;
+    const now = new Date();
+    return (
+      parts.year === now.getFullYear() &&
+      parts.month === now.getMonth() + 1 &&
+      parts.day === now.getDate()
+    );
+  }
+
+  isDatePast(dateStr: string): boolean {
+    const parts = this.parseDateParts(dateStr);
+    if (!parts) return false;
+    const now = new Date();
+    const todayYear = now.getFullYear();
+    const todayMonth = now.getMonth() + 1;
+    const todayDay = now.getDate();
+
+    if (parts.year < todayYear) return true;
+    if (parts.year > todayYear) return false;
+    if (parts.month < todayMonth) return true;
+    if (parts.month > todayMonth) return false;
+    return parts.day < todayDay;
+  }
+
+  isPastTime(dateStr: string, timeStr: string): boolean {
+    if (!dateStr || !timeStr) return false;
+    if (this.isDatePast(dateStr)) return true;
+    if (!this.isDateToday(dateStr)) return false;
+
+    const now = new Date();
+    const parts = timeStr.split(':').map(Number);
+    if (parts.length < 2 || isNaN(parts[0]) || isNaN(parts[1])) return false;
+    const timeMinutes = parts[0] * 60 + parts[1];
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    return timeMinutes <= nowMinutes;
+  }
+
+  isTimeBooked(dateStr: string, timeStr: string): boolean {
+    if (!dateStr || !timeStr) return false;
+    const targetParts = this.parseDateParts(dateStr);
+    if (!targetParts) return false;
+
+    return this.appointmentStore.appointments().some((a: AppointmentEntry) => {
+      const aParts = this.parseDateParts(a.data);
+      if (!aParts) return false;
+      return (
+        aParts.year === targetParts.year &&
+        aParts.month === targetParts.month &&
+        aParts.day === targetParts.day &&
+        a.horario === timeStr
+      );
+    });
   }
 
   private localDateString(date: Date): string {
