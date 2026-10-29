@@ -641,6 +641,58 @@
   background-color: #6597d8;
   color: #ffffff;
 }
+.pill-blocked {
+  background: rgba(180, 40, 40, 0.28);
+  border-left: 2px solid #e05555;
+  color: #ff9090;
+  font-weight: 600;
+}
+
+/* ====================================================== */
+/* BLOQUEAR DIA / HORÁRIO                                 */
+/* ====================================================== */
+.day-cell.blocked-day {
+  background: rgba(180, 40, 40, 0.12);
+  border: 1px solid rgba(180, 40, 40, 0.3);
+}
+
+.block-modal-card {
+  max-width: 540px;
+}
+
+.block-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 6px;
+}
+
+.block-form-full {
+  grid-column: 1 / -1;
+}
+
+.block-confirm-btn {
+  margin-top: 12px;
+  width: 100%;
+  justify-content: center;
+}
+
+.blocked-list-section {
+  margin-top: 20px;
+}
+
+.blocked-list-title {
+  color: #dab054;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cancel-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 
 /* ====================================================== */
 /* MODAIS (NOVO AGENDAMENTO & CANCELAR)                  */

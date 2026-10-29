@@ -119,7 +119,7 @@ export class Booking implements OnInit {
   get timeOptions(): Array<{ time: string; available: boolean }> {
     if (!this.selectedDate) return [];
     const parts = this.parseDateParts(this.selectedDate);
-    if (!parts || this.isDatePast(this.selectedDate)) return [];
+    if (!parts || this.isDatePast(this.selectedDate) || this.isDayBlocked(this.selectedDate)) return [];
 
     const dateObj = new Date(parts.year, parts.month - 1, parts.day);
     const weekday = dateObj.getDay();
@@ -139,8 +139,9 @@ export class Booking implements OnInit {
       const time = `${hour}:${minute}`;
 
       const isBooked = this.isTimeBooked(this.selectedDate, time);
+      const isBlocked = this.isTimeBlocked(this.selectedDate, time);
       const isAvailableInTimes = this.times.length === 0 || this.times.includes(time);
-      const available = !isBooked && isAvailableInTimes;
+      const available = !isBooked && !isBlocked && isAvailableInTimes;
 
       options.push({ time, available });
     }
@@ -231,6 +232,15 @@ export class Booking implements OnInit {
         return;
       }
 
+      if (this.isDayBlocked(this.selectedDate)) {
+        const block = this.appointmentStore.getBlockForDate(this.selectedDate);
+        const motivo = block?.motivo ? ` (${block.motivo})` : '';
+        this.selectedDate = '';
+        this.errorMessage = `Esta data foi indisponibilizada pelo salão${motivo}. Por favor, escolha outro dia.`;
+        this.cdr.markForCheck();
+        return;
+      }
+
       const parts = this.parseDateParts(this.selectedDate);
       if (parts) {
         const weekday = new Date(parts.year, parts.month - 1, parts.day).getDay();
@@ -263,6 +273,20 @@ export class Booking implements OnInit {
       this.cdr.markForCheck();
       return;
     }
+    if (this.isDayBlocked(this.selectedDate)) {
+      this.selectedTime = '';
+      this.errorMessage = 'Esta data foi indisponibilizada pelo salão. Por favor, escolha outro dia.';
+      this.cdr.markForCheck();
+      return;
+    }
+    if (this.isTimeBlocked(this.selectedDate, time)) {
+      this.selectedTime = '';
+      const block = this.appointmentStore.getBlockForDateTime(this.selectedDate, time);
+      const motivo = block?.motivo ? ` (${block.motivo})` : '';
+      this.errorMessage = `Este horário foi indisponibilizado pelo salão${motivo}. Por favor, escolha outro horário.`;
+      this.cdr.markForCheck();
+      return;
+    }
     if (this.isTimeBooked(this.selectedDate, time)) {
       this.selectedTime = '';
       this.errorMessage = 'Este horário já está reservado. Por favor, escolha outro horário.';
@@ -284,8 +308,22 @@ export class Booking implements OnInit {
       return;
     }
 
-    if (this.isPastTime(this.selectedDate, this.selectedTime)) {
+    if (this.isDatePast(this.selectedDate) || this.isPastTime(this.selectedDate, this.selectedTime)) {
       this.errorMessage = 'Este horário já passou. Por favor, escolha um horário futuro.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    if (this.isDayBlocked(this.selectedDate)) {
+      this.errorMessage = 'Esta data foi indisponibilizada pelo salão. Por favor, escolha outro dia.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    if (this.isTimeBlocked(this.selectedDate, this.selectedTime)) {
+      const block = this.appointmentStore.getBlockForDateTime(this.selectedDate, this.selectedTime);
+      const motivo = block?.motivo ? ` (${block.motivo})` : '';
+      this.errorMessage = `Este horário foi indisponibilizado pelo salão${motivo}. Por favor, escolha outro horário.`;
       this.cdr.markForCheck();
       return;
     }
@@ -419,7 +457,10 @@ export class Booking implements OnInit {
           }
         }
         const validTimes = Object.keys(professionalsByTime).filter(
-          (time) => !this.isPastTime(this.selectedDate, time) && !this.isTimeBooked(this.selectedDate, time)
+          (time) =>
+            !this.isPastTime(this.selectedDate, time) &&
+            !this.isTimeBooked(this.selectedDate, time) &&
+            !this.isTimeBlocked(this.selectedDate, time)
         ).sort();
         this.professionalsByTime = professionalsByTime;
         this.times = validTimes;
@@ -443,7 +484,7 @@ export class Booking implements OnInit {
       return;
     }
     const parts = this.parseDateParts(this.selectedDate);
-    if (!parts) {
+    if (!parts || this.isDayBlocked(this.selectedDate)) {
       this.times = [];
       this.loadingOptions = false;
       this.cdr.markForCheck();
@@ -466,7 +507,7 @@ export class Booking implements OnInit {
       const minute = String(minutes % 60).padStart(2, '0');
       const time = `${hour}:${minute}`;
 
-      if (!this.isTimeBooked(this.selectedDate, time)) {
+      if (!this.isTimeBooked(this.selectedDate, time) && !this.isTimeBlocked(this.selectedDate, time)) {
         fallbackTimes.push(time);
         professionalsByTime[time] = [1];
       }
@@ -475,6 +516,14 @@ export class Booking implements OnInit {
     this.times = fallbackTimes;
     this.loadingOptions = false;
     this.cdr.markForCheck();
+  }
+
+  isDayBlocked(dateStr: string): boolean {
+    return this.appointmentStore.isDayBlocked(dateStr);
+  }
+
+  isTimeBlocked(dateStr: string, timeStr: string): boolean {
+    return this.appointmentStore.isTimeBlocked(dateStr, timeStr);
   }
 
   parseDateParts(dateStr: string): { year: number; month: number; day: number } | null {

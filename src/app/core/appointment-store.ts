@@ -26,6 +26,15 @@ export interface AdminAlert {
   observacoes?: string;
 }
 
+export interface BlockedSlot {
+  id: string;
+  tipo: 'dia' | 'hora'; // 'dia' = dia inteiro, 'hora' = horário específico
+  data: string; // YYYY-MM-DD
+  horario?: string; // HH:mm
+  motivo?: string;
+  criadoEm: string; // ISO string
+}
+
 export const DEFAULT_SALON_SERVICES: SalonService[] = [
   { id: 1, nome: 'Corte', preco: '50.00', duracao: 45, descricao: 'Corte personalizado feminino e masculino com acabamento profissional' },
   { id: 2, nome: 'Coloração', preco: '120.00', duracao: 90, descricao: 'Coloração integral com cobertura uniforme e produtos profissionais' },
@@ -41,6 +50,7 @@ export const DEFAULT_SALON_SERVICES: SalonService[] = [
 const STORAGE_KEY = 'vsn_appointments';
 const ALERTS_STORAGE_KEY = 'vsn_admin_alerts';
 const SERVICES_STORAGE_KEY = 'vsn_salon_services';
+const BLOCKS_STORAGE_KEY = 'vsn_blocked_slots';
 const CROSS_TAB_TRIGGER_KEY = 'vsn_alert_cross_tab_trigger';
 const CHANNEL_NAME = 'vsn_appointments_channel';
 
@@ -49,6 +59,7 @@ export class AppointmentStore {
   private readonly _appointments = signal<AppointmentEntry[]>(this.loadFromStorage());
   private readonly _alerts = signal<AdminAlert[]>(this.loadAlertsFromStorage());
   private readonly _services = signal<SalonService[]>(this.loadServicesFromStorage());
+  private readonly _blockedSlots = signal<BlockedSlot[]>(this.loadBlockedSlotsFromStorage());
   private readonly _activeToast = signal<AdminAlert | null>(null);
 
   private broadcastChannel?: BroadcastChannel;
@@ -61,6 +72,9 @@ export class AppointmentStore {
   /** Lista reativa de todos os agendamentos */
   readonly all = this._appointments.asReadonly();
   readonly appointments = this._appointments.asReadonly();
+
+  /** Lista reativa de todos os bloqueios de data e hora */
+  readonly blockedSlots = this._blockedSlots.asReadonly();
 
   /** Agendamentos do dia atual */
   readonly today = computed(() => {
@@ -134,6 +148,82 @@ export class AppointmentStore {
     this._services.update((prev) => prev.filter((s) => s.id !== id));
     this.saveServicesToStorage();
     this.broadcastServicesUpdate();
+  }
+
+  /** Adiciona um bloqueio de dia ou horário */
+  addBlock(block: Omit<BlockedSlot, 'id' | 'criadoEm'>): BlockedSlot {
+    const newBlock: BlockedSlot = {
+      ...block,
+      data: this.normalizeDate(block.data),
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      criadoEm: new Date().toISOString(),
+    };
+    this._blockedSlots.update((prev) => [newBlock, ...prev]);
+    this.saveBlockedSlotsToStorage();
+    this.broadcastBlocksUpdate();
+    return newBlock;
+  }
+
+  /** Remove um bloqueio pelo ID */
+  removeBlock(id: string): void {
+    this._blockedSlots.update((prev) => prev.filter((b) => b.id !== id));
+    this.saveBlockedSlotsToStorage();
+    this.broadcastBlocksUpdate();
+  }
+
+  /** Verifica se um dia inteiro está bloqueado */
+  isDayBlocked(date: string): boolean {
+    if (!date) return false;
+    const norm = this.normalizeDate(date);
+    return this._blockedSlots().some(
+      (b) => b.tipo === 'dia' && this.normalizeDate(b.data) === norm
+    );
+  }
+
+  /** Verifica se um horário específico (ou o dia todo) está bloqueado */
+  isTimeBlocked(date: string, time: string): boolean {
+    if (!date || !time) return false;
+    const norm = this.normalizeDate(date);
+    return this._blockedSlots().some((b) => {
+      const bDate = this.normalizeDate(b.data);
+      if (bDate !== norm) return false;
+      if (b.tipo === 'dia') return true;
+      return b.tipo === 'hora' && b.horario === time;
+    });
+  }
+
+  /** Retorna o bloqueio para uma data (se houver dia bloqueado) */
+  getBlockForDate(date: string): BlockedSlot | undefined {
+    if (!date) return undefined;
+    const norm = this.normalizeDate(date);
+    return this._blockedSlots().find(
+      (b) => b.tipo === 'dia' && this.normalizeDate(b.data) === norm
+    );
+  }
+
+  /** Retorna o bloqueio para uma data e horário específicos */
+  getBlockForDateTime(date: string, time: string): BlockedSlot | undefined {
+    if (!date || !time) return undefined;
+    const norm = this.normalizeDate(date);
+    return this._blockedSlots().find((b) => {
+      const bDate = this.normalizeDate(b.data);
+      if (bDate !== norm) return false;
+      return b.tipo === 'dia' || (b.tipo === 'hora' && b.horario === time);
+    });
+  }
+
+  normalizeDate(dateStr: string): string {
+    if (!dateStr) return '';
+    const clean = String(dateStr).trim();
+    if (/^\d{4}-\d{1,2}-\d{1,2}/.test(clean)) {
+      const [y, m, d] = clean.split('T')[0].split('-').map(Number);
+      return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    }
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(clean)) {
+      const [d, m, y] = clean.split('T')[0].split('/').map(Number);
+      return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    }
+    return clean;
   }
 
   /** Adiciona um agendamento, persiste e dispara alerta para o Admin */
@@ -319,6 +409,8 @@ export class AppointmentStore {
             this.handleIncomingCrossTabAlert(event.data.alert);
           } else if (event.data?.type === 'SERVICES_UPDATED') {
             this._services.set(this.loadServicesFromStorage());
+          } else if (event.data?.type === 'BLOCKS_UPDATED') {
+            this._blockedSlots.set(this.loadBlockedSlotsFromStorage());
           }
         };
       }
@@ -343,6 +435,8 @@ export class AppointmentStore {
         this._alerts.set(this.loadAlertsFromStorage());
       } else if (event.key === SERVICES_STORAGE_KEY) {
         this._services.set(this.loadServicesFromStorage());
+      } else if (event.key === BLOCKS_STORAGE_KEY) {
+        this._blockedSlots.set(this.loadBlockedSlotsFromStorage());
       }
     });
   }
@@ -351,6 +445,16 @@ export class AppointmentStore {
     try {
       if (this.broadcastChannel) {
         this.broadcastChannel.postMessage({ type: 'SERVICES_UPDATED' });
+      }
+    } catch {
+      // BroadcastChannel indisponível
+    }
+  }
+
+  private broadcastBlocksUpdate(): void {
+    try {
+      if (this.broadcastChannel) {
+        this.broadcastChannel.postMessage({ type: 'BLOCKS_UPDATED' });
       }
     } catch {
       // BroadcastChannel indisponível
@@ -470,6 +574,25 @@ export class AppointmentStore {
         lido: true,
       },
     ];
+  }
+
+  private loadBlockedSlotsFromStorage(): BlockedSlot[] {
+    try {
+      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(BLOCKS_STORAGE_KEY) : null;
+      return raw ? (JSON.parse(raw) as BlockedSlot[]) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private saveBlockedSlotsToStorage(): void {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(BLOCKS_STORAGE_KEY, JSON.stringify(this._blockedSlots()));
+      }
+    } catch {
+      // localStorage indisponível
+    }
   }
 
   /** Dados de exemplo iniciais (usados apenas na primeira vez) */

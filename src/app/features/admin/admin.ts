@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, computed } fro
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { AppointmentStore, AppointmentEntry, AdminAlert } from '../../core/appointment-store';
+import { AppointmentStore, AppointmentEntry, AdminAlert, BlockedSlot } from '../../core/appointment-store';
 import { SalonService } from '../../core/booking-api';
 
 export interface TodayAppointment {
@@ -25,13 +25,15 @@ export interface ClientRecord {
 export interface CalendarPill {
   horario: string;
   servico: string;
-  colorType: 'yellow' | 'pink' | 'green' | 'purple' | 'blue';
+  colorType: 'yellow' | 'pink' | 'green' | 'purple' | 'blue' | 'blocked';
 }
 
 export interface CalendarDay {
   dayNumber: number;
   isCurrentMonth: boolean;
   isToday?: boolean;
+  isBlocked?: boolean;
+  blockReason?: string;
   pills?: CalendarPill[];
 }
 
@@ -43,7 +45,7 @@ export interface CalendarDay {
 })
 export class Admin implements OnInit, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef);
-  private readonly store = inject(AppointmentStore);
+  readonly store = inject(AppointmentStore);
   private timerId?: ReturnType<typeof setInterval>;
 
   activeTab: 'dashboard' | 'agendamentos' | 'clientes' | 'servicos' = 'dashboard';
@@ -190,6 +192,15 @@ export class Admin implements OnInit, OnDestroy {
   // Controle de Modais
   showNewAppointmentModal = false;
   showCancelAppointmentModal = false;
+  showBlockModal = false;
+  blockFeedback = '';
+  blockForm = {
+    tipo: 'hora' as 'dia' | 'hora',
+    data: this.store.todayDate(),
+    horario: '14:00',
+    motivo: '',
+  };
+  readonly blockedSlots = this.store.blockedSlots;
 
   // Notificações e Alertas do Admin
   readonly alerts = this.store.alerts;
@@ -375,6 +386,73 @@ export class Admin implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
+  get todayDate(): string {
+    return this.store.todayDate();
+  }
+
+  formatDateBR(dateStr: string): string {
+    return this.store.formatDateBR(dateStr);
+  }
+
+  openBlockModal(): void {
+    const now = new Date();
+    const nextSlotMinutes = Math.ceil((now.getHours() * 60 + now.getMinutes() + 1) / 15) * 15;
+    const h = String(Math.floor(nextSlotMinutes / 60)).padStart(2, '0');
+    const m = String(nextSlotMinutes % 60).padStart(2, '0');
+
+    this.blockForm = {
+      tipo: 'hora',
+      data: this.store.todayDate(),
+      horario: `${h}:${m}`,
+      motivo: '',
+    };
+    this.blockFeedback = '';
+    this.showBlockModal = true;
+    this.cdr.markForCheck();
+  }
+
+  closeBlockModal(): void {
+    this.showBlockModal = false;
+    this.cdr.markForCheck();
+  }
+
+  saveBlock(): void {
+    if (!this.blockForm.data) {
+      this.blockFeedback = 'Selecione uma data para indisponibilizar.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    if (this.blockForm.tipo === 'hora' && !this.blockForm.horario) {
+      this.blockFeedback = 'Informe o horário que deseja bloquear.';
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.store.addBlock({
+      tipo: this.blockForm.tipo,
+      data: this.blockForm.data,
+      horario: this.blockForm.tipo === 'hora' ? this.blockForm.horario : undefined,
+      motivo: this.blockForm.motivo.trim() || (this.blockForm.tipo === 'dia' ? 'Dia fechado' : 'Horário indisponível'),
+    });
+
+    const dataFmt = this.store.formatDateBR(this.blockForm.data);
+    this.blockFeedback = this.blockForm.tipo === 'dia'
+      ? `Dia ${dataFmt} indisponibilizado com sucesso!`
+      : `Horário ${this.blockForm.horario} em ${dataFmt} indisponibilizado com sucesso!`;
+
+    this.blockForm.motivo = '';
+    this.rebuildCalendar();
+    this.cdr.markForCheck();
+  }
+
+  removeBlock(id: string): void {
+    this.store.removeBlock(id);
+    this.blockFeedback = 'Indisponibilidade removida com sucesso!';
+    this.rebuildCalendar();
+    this.cdr.markForCheck();
+  }
+
   saveNewClient(): void {
     if (!this.clientForm.nome.trim()) return;
 
@@ -466,13 +544,37 @@ export class Admin implements OnInit, OnDestroy {
 
       // Adiciona as pílulas de demonstração para Outubro de 2026 se não houver agendamentos reais
       if (!pills.length && displayYear === 2026 && displayMonth === 9 && demoPillsOutubro[d]) {
-        pills = demoPillsOutubro[d];
+        pills = [...demoPillsOutubro[d]];
+      }
+
+      const isDayBlocked = this.store.isDayBlocked(dateKey);
+      const dayBlock = this.store.getBlockForDate(dateKey);
+      const dayHourBlocks = this.store.blockedSlots().filter(
+        (b) => b.tipo === 'hora' && this.store.normalizeDate(b.data) === dateKey
+      );
+
+      if (isDayBlocked) {
+        pills.unshift({
+          horario: '🚫',
+          servico: dayBlock?.motivo || 'Dia Bloqueado',
+          colorType: 'blocked',
+        });
+      } else {
+        for (const hb of dayHourBlocks) {
+          pills.push({
+            horario: hb.horario || '🚫',
+            servico: hb.motivo ? `🚫 ${hb.motivo}` : '🚫 Indisponível',
+            colorType: 'blocked',
+          });
+        }
       }
 
       days.push({
         dayNumber: d,
         isCurrentMonth: true,
         isToday,
+        isBlocked: isDayBlocked,
+        blockReason: dayBlock?.motivo,
         pills: pills.length ? pills : undefined,
       });
     }

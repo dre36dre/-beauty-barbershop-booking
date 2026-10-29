@@ -253,6 +253,9 @@
           <button type="button" class="gold-action-btn" (click)="openCancelAppointmentModal()">
             - Cancelar Agendamento
           </button>
+          <button type="button" class="gold-action-btn btn-block" (click)="openBlockModal()">
+            🚫 Indisponibilizar Dia / Horário
+          </button>
         </div>
 
         <!-- Grade de Cards: Clientes de Hoje & Resumo de Hoje -->
@@ -496,7 +499,9 @@
               <div
                 class="day-cell"
                 [class.dimmed]="!day.isCurrentMonth"
-                [class.today-cell]="day.isCurrentMonth && day.isToday">
+                [class.today-cell]="day.isCurrentMonth && day.isToday"
+                [class.blocked-day]="day.isCurrentMonth && day.isBlocked"
+                [title]="day.isBlocked && day.blockReason ? 'Bloqueado: ' + day.blockReason : ''">
                 <span class="day-number">{{ day.dayNumber }}</span>
 
                 @if (day.pills && day.pills.length) {
@@ -787,3 +792,91 @@
   </div>
 }
 
+
+<!-- ============================================== -->
+<!-- MODAL: INDISPONIBILIZAR DIA / HORÁRIO          -->
+<!-- ============================================== -->
+@if (showBlockModal) {
+  <div class="modal-backdrop" (click)="closeBlockModal()">
+    <div class="modal-card block-modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="script-title">Indisponibilizar Horário ou Dia</h3>
+        <button type="button" class="close-btn" (click)="closeBlockModal()">✕</button>
+      </div>
+      <div class="modal-body">
+
+        @if (blockFeedback) {
+          <div class="feedback-banner-modal">
+            <span>{{ blockFeedback }}</span>
+          </div>
+        }
+
+        <div class="block-form-grid">
+          <label class="modal-field">
+            <span>Tipo de bloqueio</span>
+            <select [(ngModel)]="blockForm.tipo">
+              <option value="hora">Horário específico</option>
+              <option value="dia">Dia inteiro</option>
+            </select>
+          </label>
+
+          <label class="modal-field">
+            <span>Data</span>
+            <input type="date" [(ngModel)]="blockForm.data" [min]="store.todayDate()" />
+          </label>
+
+          @if (blockForm.tipo === 'hora') {
+            <label class="modal-field">
+              <span>Horário</span>
+              <input type="time" [(ngModel)]="blockForm.horario" />
+            </label>
+          }
+
+          <label class="modal-field block-form-full">
+            <span>Motivo (opcional)</span>
+            <input
+              type="text"
+              [(ngModel)]="blockForm.motivo"
+              placeholder="Ex: Feriado, manutenção, folga..."
+              maxlength="100"
+            />
+          </label>
+        </div>
+
+        <button
+          type="button"
+          class="gold-action-btn block-confirm-btn"
+          (click)="saveBlock()">
+          🚫 Confirmar Indisponibilização
+        </button>
+
+        <!-- Lista de bloqueios existentes -->
+        @if (blockedSlots().length > 0) {
+          <div class="blocked-list-section">
+            <h4 class="blocked-list-title">Bloqueios Ativos</h4>
+            <div class="cancel-list">
+              @for (block of blockedSlots(); track block.id) {
+                <div class="cancel-item">
+                  <div class="cancel-item-info">
+                    <strong>
+                      {{ block.tipo === 'dia' ? '📅 Dia inteiro' : '🕐 ' + block.horario }}
+                      — {{ store.formatDateBR(block.data) }}
+                    </strong>
+                    <small>{{ block.motivo || 'Sem motivo informado' }}</small>
+                  </div>
+                  <button type="button" class="btn-danger" (click)="removeBlock(block.id)">
+                    Remover
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="closeBlockModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
+}
