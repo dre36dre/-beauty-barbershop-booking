@@ -58,6 +58,26 @@ h1 span { color: #f0b3b1; }
 .footer-note { margin: 31px 0 0; color: #8d7e80; font-size: 9px; font-weight: 600; letter-spacing: .2em; }
 .footer-note span { padding: 0 7px; color: #c4787d; }
 
+.footer-admin-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 25px;
+}
+.footer-admin-row .footer-note {
+  margin: 0;
+}
+.admin-discreet-link {
+  color: #a49193;
+  font-size: 11px;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.admin-discreet-link:hover {
+  color: #dab054;
+}
+
 @media (max-width: 560px) {
   .landing { min-height: 100svh; padding: 18px 14px; }
   .card-content { padding: 44px 17px 25px; }

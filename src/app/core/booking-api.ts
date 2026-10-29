@@ -75,7 +75,7 @@ export class BookingApi {
     return this.post<BookingSummary>('/resumo/', { servicos: serviceIds });
   }
 
-  createClient(client: { nome: string; telefone: string; endereco: string; email: string }): Observable<CreatedClient> {
+  createClient(client: { nome: string; telefone: string; endereco?: string; email: string; anotacao?: string }): Observable<CreatedClient> {
     return this.post<CreatedClient>('/clientes/', client);
   }
 
