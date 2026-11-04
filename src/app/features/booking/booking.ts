@@ -153,11 +153,8 @@ export class Booking implements OnInit {
       timeout(1500),
       switchMap(() => this.api.getServices().pipe(timeout(1500))),
     ).subscribe({
-      next: (response) => {
+      next: () => {
         this.backendAvailable = true;
-        if (response?.servicos && response.servicos.length > 0) {
-          this.services = response.servicos;
-        }
         this.cdr.markForCheck();
       },
       error: () => {
@@ -386,7 +383,8 @@ export class Booking implements OnInit {
       id: Math.floor(1000 + Math.random() * 9000),
       status: 'Confirmado',
       valor_total: this.summary?.valor_total ?? this.selectedSubtotal.toFixed(2),
-      duracao_total: this.summary?.duracao_total ?? 0,
+      duracao_total: this.summary?.duracao_total
+        ?? this.selectedServiceDetails.reduce((total, service) => total + service.duracao, 0),
     };
     this.submitting = false;
     this.cdr.markForCheck();
@@ -405,7 +403,14 @@ export class Booking implements OnInit {
       ).subscribe({
         next: (createdBooking) => {
           if (createdBooking?.id) {
-            this.success = createdBooking;
+            this.success = {
+              ...createdBooking,
+              valor_total: this.selectedSubtotal.toFixed(2),
+              duracao_total: this.selectedServiceDetails.reduce(
+                (total, service) => total + service.duracao,
+                0,
+              ),
+            };
             this.cdr.markForCheck();
           }
         },

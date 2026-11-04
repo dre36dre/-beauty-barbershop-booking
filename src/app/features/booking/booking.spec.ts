@@ -1,8 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { Booking } from './booking';
+import { AppointmentStore } from '../../core/appointment-store';
 
 describe('Booking Component', () => {
   let component: Booking;
@@ -36,6 +37,26 @@ describe('Booking Component', () => {
     expect(serviceNames).toContain('tratamento');
     expect(serviceNames).toContain('luzes');
     expect(serviceNames).toContain('design de sobrancelhas');
+  });
+
+  it('should keep locally saved service changes when the backend catalog loads', () => {
+    const store = TestBed.inject(AppointmentStore);
+    const services = store.services().map((service) =>
+      service.id === 1 ? { ...service, preco: '65.00', duracao: 50 } : service,
+    );
+    store.updateAllServices(services);
+    component.services = [...store.services()];
+
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne('/api/csrf/').flush({ ok: true });
+    http.expectOne('/api/servicos/').flush({
+      servicos: [{ ...services[0], preco: '50.00', duracao: 45 }],
+    });
+
+    expect(component.services.find((service) => service.id === 1)).toMatchObject({
+      preco: '65.00',
+      duracao: 50,
+    });
   });
 
   it('should update Seu resumo when selecting a service', () => {
@@ -111,4 +132,3 @@ describe('Booking Component', () => {
     expect(component.success).toBeNull();
   });
 });
-
