@@ -161,6 +161,9 @@ export class Admin implements OnInit, OnDestroy {
     if (error instanceof HttpErrorResponse && error.status === 403) {
       return 'Acesso negado. Entre no Django Admin com uma conta administrativa e tente novamente.';
     }
+    if (error instanceof HttpErrorResponse && error.status === 200) {
+      return 'A API respondeu HTTP 200, mas não retornou JSON. No Vercel, publique o Django em um servidor de API e configure api-base-url no src/index.html com a URL pública desse backend.';
+    }
     if (error instanceof HttpErrorResponse && error.status === 0) {
       return 'Não foi possível conectar ao servidor. As alterações não foram salvas.';
     }

@@ -240,4 +240,17 @@ describe('Admin Component', () => {
     expect(store.services().find((s) => s.id === 1)?.preco).toBe('50.00');
     expect(store.services().find((s) => s.id === 1)?.duracao).toBe(45);
   });
+
+  it('should explain when Vercel returns a successful non-JSON response', () => {
+    component.openServicesModal();
+    component.saveServicesChanges();
+    http.expectOne('/api/csrf/').flush({ ok: true });
+    http.expectOne('/api/servicos/atualizar/').error(new ProgressEvent('error'), {
+      status: 200,
+      statusText: 'OK',
+    });
+
+    expect(component.servicesFeedback).toContain('HTTP 200');
+    expect(component.servicesFeedback).toContain('api-base-url');
+  });
 });

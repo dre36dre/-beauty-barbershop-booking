@@ -14,7 +14,9 @@ Once the server is running, open your browser and navigate to `http://localhost:
 
 ## Booking API
 
-The `/agendar` page uses the Django API. Start the backend from `Barbearia` on `http://localhost:8000`, then run the Angular development server. `proxy.conf.json` forwards local `/api` requests to Django. For deployment, set the `api-base-url` meta tag in `src/index.html` to the public API origin.
+The `/agendar` page uses the Django API. Start the backend from `Barbearia` on `http://localhost:8000`, then run the Angular development server. `proxy.conf.json` forwards local `/api` requests to Django.
+
+Vercel serves the Angular frontend but does not automatically run this Django project from the `Barbearia` folder. Deploy Django separately, then set the `api-base-url` meta tag in `src/index.html` to the public backend origin (for example, `https://api.example.com`, without `/api`). Do not leave it as `/api` unless Vercel is explicitly routing that path to the Django backend; otherwise its frontend fallback may return `index.html` with HTTP 200 instead of JSON. Configure the Django CORS and CSRF trusted origins for the frontend domain. Service edits also require an authenticated Django staff session.
 
 The admin service catalog is stored by Django so prices and durations are shared between devices. Sign in to Django Admin with a staff account before saving service changes in the Angular admin panel; locally, Django Admin is available at `http://localhost:8000/admin/`.
 
