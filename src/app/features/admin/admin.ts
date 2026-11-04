@@ -164,6 +164,15 @@ export class Admin implements OnInit, OnDestroy {
     if (error instanceof HttpErrorResponse && error.status === 0) {
       return 'Não foi possível conectar ao servidor. As alterações não foram salvas.';
     }
+    if (error instanceof HttpErrorResponse) {
+      const response = error.error;
+      const detail =
+        typeof response === 'object' && response !== null && 'erro' in response &&
+        typeof response.erro === 'string'
+          ? ` ${response.erro}`
+          : '';
+      return `O servidor não salvou as alterações (HTTP ${error.status}).${detail}`;
+    }
     return 'Não foi possível salvar os serviços. As alterações não foram aplicadas.';
   }
 

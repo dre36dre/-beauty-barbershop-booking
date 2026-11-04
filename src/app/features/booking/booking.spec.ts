@@ -50,7 +50,9 @@ describe('Booking Component', () => {
     const http = TestBed.inject(HttpTestingController);
     http.expectOne('/api/csrf/').flush({ ok: true });
     http.expectOne('/api/servicos/').flush({
-      servicos: [{ ...services[0], preco: '70.00', duracao: 55 }],
+      servicos: services.map((service) =>
+        service.id === 1 ? { ...service, preco: '70.00', duracao: 55 } : service,
+      ),
     });
 
     expect(component.services.find((service) => service.id === 1)).toMatchObject({
