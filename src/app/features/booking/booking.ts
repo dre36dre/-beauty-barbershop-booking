@@ -153,8 +153,10 @@ export class Booking implements OnInit {
       timeout(1500),
       switchMap(() => this.api.getServices().pipe(timeout(1500))),
     ).subscribe({
-      next: () => {
+      next: ({ servicos }) => {
         this.backendAvailable = true;
+        this.services = servicos;
+        this.appointmentStore.replaceServicesFromServer(servicos);
         this.cdr.markForCheck();
       },
       error: () => {

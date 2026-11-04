@@ -53,6 +53,10 @@ export class BookingApi {
     });
   }
 
+  updateServices(services: SalonService[]): Observable<{ servicos: SalonService[] }> {
+    return this.post<{ servicos: SalonService[] }>('/servicos/atualizar/', { servicos: services });
+  }
+
   getProfessionals(date: string, serviceIds: number[]): Observable<{ profissionais: Professional[] }> {
     let params = new HttpParams().set('data', date);
     for (const id of serviceIds) params = params.append('servico_id', id);

@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { Admin } from './admin';
 import { AppointmentStore } from '../../core/appointment-store';
@@ -7,17 +9,25 @@ describe('Admin Component', () => {
   let component: Admin;
   let fixture: ComponentFixture<Admin>;
   let store: AppointmentStore;
+  let http: HttpTestingController;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Admin],
-      providers: [provideRouter([]), AppointmentStore],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        AppointmentStore,
+      ],
     }).compileComponents();
 
     store = TestBed.inject(AppointmentStore);
+    http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(Admin);
     component = fixture.componentInstance;
     fixture.detectChanges();
+    http.expectOne('/api/servicos/').flush({ servicos: store.services() });
   });
 
   it('should create admin component', () => {
@@ -207,6 +217,10 @@ describe('Admin Component', () => {
     component.editingServices[0].duracao = 50;
 
     component.saveServicesChanges();
+    http.expectOne('/api/csrf/').flush({ ok: true });
+    const request = http.expectOne('/api/servicos/atualizar/');
+    expect(request.request.method).toBe('POST');
+    request.flush({ servicos: request.request.body.servicos });
 
     // Verifica que o store foi atualizado
     const updated = store.services().find((s) => s.id === 1);
@@ -220,6 +234,9 @@ describe('Admin Component', () => {
     expect(store.services().find((s) => s.id === 1)?.preco).toBe('99.00');
 
     component.resetServicesDefaults();
+    http.expectOne('/api/csrf/').flush({ ok: true });
+    const request = http.expectOne('/api/servicos/atualizar/');
+    request.flush({ servicos: request.request.body.servicos });
     expect(store.services().find((s) => s.id === 1)?.preco).toBe('50.00');
     expect(store.services().find((s) => s.id === 1)?.duracao).toBe(45);
   });

@@ -88,6 +88,12 @@ export class AppointmentStore {
   /** Lista reativa de serviços com valores e durações atualizados */
   readonly services = this._services.asReadonly();
 
+  /** Replaces the cached list with the shared server-side service list. */
+  replaceServicesFromServer(services: SalonService[]): void {
+    this._services.set(services);
+    this.saveServicesToStorage();
+  }
+
   /** Quantidade de alertas não lidos */
   readonly unreadAlertsCount = computed(() => {
     return this._alerts().filter((a) => !a.lido).length;
@@ -608,5 +614,4 @@ export class AppointmentStore {
     ];
   }
 }
-
 

@@ -16,6 +16,8 @@ Once the server is running, open your browser and navigate to `http://localhost:
 
 The `/agendar` page uses the Django API. Start the backend from `Barbearia` on `http://localhost:8000`, then run the Angular development server. `proxy.conf.json` forwards local `/api` requests to Django. For deployment, set the `api-base-url` meta tag in `src/index.html` to the public API origin.
 
+The admin service catalog is stored by Django so prices and durations are shared between devices. Sign in to Django Admin with a staff account before saving service changes in the Angular admin panel; locally, Django Admin is available at `http://localhost:8000/admin/`.
+
 ## Code scaffolding
 
 Angular CLI includes powerful code scaffolding tools. To generate a new component, run:

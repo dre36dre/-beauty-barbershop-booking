@@ -39,7 +39,7 @@ describe('Booking Component', () => {
     expect(serviceNames).toContain('design de sobrancelhas');
   });
 
-  it('should keep locally saved service changes when the backend catalog loads', () => {
+  it('should use the shared service catalog returned by the backend', () => {
     const store = TestBed.inject(AppointmentStore);
     const services = store.services().map((service) =>
       service.id === 1 ? { ...service, preco: '65.00', duracao: 50 } : service,
@@ -50,12 +50,16 @@ describe('Booking Component', () => {
     const http = TestBed.inject(HttpTestingController);
     http.expectOne('/api/csrf/').flush({ ok: true });
     http.expectOne('/api/servicos/').flush({
-      servicos: [{ ...services[0], preco: '50.00', duracao: 45 }],
+      servicos: [{ ...services[0], preco: '70.00', duracao: 55 }],
     });
 
     expect(component.services.find((service) => service.id === 1)).toMatchObject({
-      preco: '65.00',
-      duracao: 50,
+      preco: '70.00',
+      duracao: 55,
+    });
+    expect(store.services().find((service) => service.id === 1)).toMatchObject({
+      preco: '70.00',
+      duracao: 55,
     });
   });
 

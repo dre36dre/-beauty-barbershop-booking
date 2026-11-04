@@ -2,8 +2,16 @@ import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, computed } fro
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { AppointmentStore, AppointmentEntry, AdminAlert, BlockedSlot } from '../../core/appointment-store';
-import { SalonService } from '../../core/booking-api';
+import { HttpErrorResponse } from '@angular/common/http';
+import { switchMap, timeout } from 'rxjs';
+import {
+  AppointmentStore,
+  AppointmentEntry,
+  AdminAlert,
+  BlockedSlot,
+  DEFAULT_SALON_SERVICES,
+} from '../../core/appointment-store';
+import { BookingApi, SalonService } from '../../core/booking-api';
 
 export interface TodayAppointment {
   id: number;
@@ -46,6 +54,7 @@ export interface CalendarDay {
 export class Admin implements OnInit, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef);
   readonly store = inject(AppointmentStore);
+  private readonly api = inject(BookingApi);
   private timerId?: ReturnType<typeof setInterval>;
 
   activeTab: 'dashboard' | 'agendamentos' | 'clientes' | 'servicos' = 'dashboard';
@@ -55,6 +64,7 @@ export class Admin implements OnInit, OnDestroy {
   showServicesModal = false;
   editingServices: SalonService[] = [];
   servicesFeedback = '';
+  savingServices = false;
 
   openServicesModal(): void {
     this.editingServices = this.salonServices().map((s) => ({ ...s }));
@@ -69,11 +79,10 @@ export class Admin implements OnInit, OnDestroy {
   }
 
   addNewServiceRow(): void {
-    const nextId = Math.max(...this.editingServices.map((s) => s.id), 0) + 1;
     this.editingServices = [
       ...this.editingServices,
       {
-        id: nextId,
+        id: 0,
         nome: '',
         preco: '0.00',
         duracao: 30,
@@ -95,34 +104,67 @@ export class Admin implements OnInit, OnDestroy {
   }
 
   saveServicesChanges(): void {
-    // Filtra serviços com nome vazio antes de salvar
     const valid = this.editingServices.filter((s) => s.nome.trim().length > 0);
-    this.store.updateAllServices(valid);
-    this.servicesFeedback = `${valid.length} serviço(s) salvos com sucesso!`;
-    setTimeout(() => {
-      this.servicesFeedback = '';
-      this.closeServicesModal();
-    }, 1200);
-    this.cdr.markForCheck();
+    this.persistServices(valid, `${valid.length} serviço(s) salvos com sucesso!`, true);
   }
 
   resetServicesDefaults(): void {
-    this.store.resetServices();
-    this.editingServices = this.salonServices().map((s) => ({ ...s }));
-    this.servicesFeedback = 'Valores e tempos restaurados para os padrões.';
-    setTimeout(() => {
-      this.servicesFeedback = '';
-    }, 2000);
-    this.cdr.markForCheck();
+    this.persistServices(
+      [...DEFAULT_SALON_SERVICES],
+      'Valores e tempos restaurados para os padrões.',
+    );
   }
 
   saveSingleService(service: SalonService): void {
-    this.store.updateService(service.id, service.preco, service.duracao);
-    this.servicesFeedback = `Serviço "${service.nome}" atualizado!`;
-    setTimeout(() => {
-      this.servicesFeedback = '';
-    }, 2000);
-    this.cdr.markForCheck();
+    const updated = this.salonServices().map((current) =>
+      current.id === service.id ? service : current,
+    );
+    this.persistServices(updated, `Serviço "${service.nome}" atualizado!`);
+  }
+
+  private persistServices(
+    services: SalonService[],
+    successMessage: string,
+    closeOnSuccess = false,
+  ): void {
+    if (this.savingServices) return;
+
+    this.savingServices = true;
+    this.servicesFeedback = '';
+    this.api.initializeCsrf().pipe(
+      timeout(3000),
+      switchMap(() => this.api.updateServices(services).pipe(timeout(5000))),
+    ).subscribe({
+      next: ({ servicos }) => {
+        this.store.replaceServicesFromServer(servicos);
+        this.editingServices = servicos.map((service) => ({ ...service }));
+        this.servicesFeedback = successMessage;
+        this.savingServices = false;
+        this.cdr.markForCheck();
+
+        if (closeOnSuccess) {
+          setTimeout(() => {
+            this.servicesFeedback = '';
+            this.closeServicesModal();
+          }, 1200);
+        }
+      },
+      error: (error: unknown) => {
+        this.servicesFeedback = this.servicesErrorMessage(error);
+        this.savingServices = false;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  private servicesErrorMessage(error: unknown): string {
+    if (error instanceof HttpErrorResponse && error.status === 403) {
+      return 'Acesso negado. Entre no Django Admin com uma conta administrativa e tente novamente.';
+    }
+    if (error instanceof HttpErrorResponse && error.status === 0) {
+      return 'Não foi possível conectar ao servidor. As alterações não foram salvas.';
+    }
+    return 'Não foi possível salvar os serviços. As alterações não foram aplicadas.';
   }
 
   // Informações de data e hora do rodapé da barra lateral
@@ -272,6 +314,17 @@ export class Admin implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.updateClock();
+    this.api.getServices().pipe(timeout(5000)).subscribe({
+      next: ({ servicos }) => {
+        this.store.replaceServicesFromServer(servicos);
+        this.servicesFeedback = '';
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.servicesFeedback = 'Não foi possível carregar os serviços do servidor.';
+        this.cdr.markForCheck();
+      },
+    });
     this.timerId = setInterval(() => {
       this.updateClock();
       this.cdr.markForCheck();

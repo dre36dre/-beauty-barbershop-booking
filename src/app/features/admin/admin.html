@@ -776,15 +776,16 @@
           type="button"
           class="btn-reset-defaults"
           (click)="resetServicesDefaults()"
+          [disabled]="savingServices"
           title="Restaurar valores de fábrica">
           Restaurar Padrões
         </button>
         <div class="modal-footer-right">
-          <button type="button" class="btn-secondary" (click)="closeServicesModal()">
+          <button type="button" class="btn-secondary" (click)="closeServicesModal()" [disabled]="savingServices">
             Cancelar
           </button>
-          <button type="button" class="gold-action-btn btn-save-modal" (click)="saveServicesChanges()">
-            Salvar Alterações
+          <button type="button" class="gold-action-btn btn-save-modal" (click)="saveServicesChanges()" [disabled]="savingServices">
+            {{ savingServices ? 'Salvando...' : 'Salvar Alterações' }}
           </button>
         </div>
       </div>
