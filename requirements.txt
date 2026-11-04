@@ -1,0 +1,1 @@
+-r Barbearia/requirements.txt

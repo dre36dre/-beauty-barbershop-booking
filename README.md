@@ -18,7 +18,16 @@ The `/agendar` page uses the Django API. Start the backend from `Barbearia` on `
 
 Vercel serves the Angular frontend but does not automatically run this Django project from the `Barbearia` folder. Deploy Django separately, then set the `api-base-url` meta tag in `src/index.html` to the public backend origin (for example, `https://api.example.com`, without `/api`). Do not leave it as `/api` unless Vercel is explicitly routing that path to the Django backend; otherwise its frontend fallback may return `index.html` with HTTP 200 instead of JSON. Configure the Django CORS and CSRF trusted origins for the frontend domain. Service edits also require an authenticated Django staff session.
 
-The admin service catalog is stored by Django so prices and durations are shared between devices. Sign in to Django Admin with a staff account before saving service changes in the Angular admin panel; locally, Django Admin is available at `http://localhost:8000/admin/`.
+The Vercel configuration in `vercel.json` serves Angular and forwards `/api/*` to the Django function in `api/index.py`. Before deploying, connect a persistent PostgreSQL database to the Vercel project and set `DJANGO_SECRET_KEY`. Vercel must provide `DATABASE_URL`; the deployment fails clearly if either setting is missing. In the Vercel project settings, set `DJANGO_ALLOWED_HOSTS` to `beauty-barbershop-booking.vercel.app` and any other domains you use. Then deploy, apply the database migrations, and create a Django staff user. The service catalog is shared through that database. Sign in at `/django-admin/` before saving service changes in the Angular admin panel; the `/admin` path remains the Angular dashboard.
+
+On Windows, install the backend dependencies with `pip install -r Barbearia\requirements.txt`, link the repository with the Vercel CLI, and run migrations and create a staff account with the production database credentials:
+
+```powershell
+vercel env run -e production -- python Barbearia\manage.py migrate
+vercel env run -e production -- python Barbearia\manage.py createsuperuser
+```
+
+Never commit environment files or share database credentials.
 
 ## Code scaffolding
 

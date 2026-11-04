@@ -1,0 +1,18 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/beauty-barbershop-booking/browser",
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 60,
+      "includeFiles": ["Barbearia/**"]
+    }
+  },
+  "rewrites": [
+    { "source": "/api", "destination": "/api/index.py" },
+    { "source": "/api/(.*)", "destination": "/api/index.py" },
+    { "source": "/django-admin", "destination": "/api/index.py" },
+    { "source": "/django-admin/(.*)", "destination": "/api/index.py" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
