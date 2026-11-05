@@ -2,7 +2,7 @@ import os
 import sys
 from pathlib import Path
 
-backend_root = Path(__file__).resolve().parents[1] / 'Barbearia'
+backend_root = Path(__file__).resolve().parents[1] / 'backend'
 sys.path.insert(0, str(backend_root))
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'barbearia.settings')

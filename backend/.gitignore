@@ -1,0 +1,8 @@
+.env
+.env.local
+venv/
+__pycache__/
+*.pyc
+*.sqlite3
+*.sql
+backup_models/
