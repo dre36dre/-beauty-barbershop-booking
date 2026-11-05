@@ -199,6 +199,13 @@
       </div>
     </header>
 
+    @if (appointmentSyncMessage) {
+      <div class="appointment-sync-message" role="alert">
+        <span>{{ appointmentSyncMessage }}</span>
+        <a href="/django-admin/">Acessar administração segura</a>
+      </div>
+    }
+
     <!-- Alerta Flutuante (Toast Pop-up em Tempo Real) -->
     @if (activeToast(); as toast) {
       <div class="toast-alert-container" role="alert" (click)="openAlertDetails(toast)">

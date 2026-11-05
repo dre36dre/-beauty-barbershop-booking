@@ -6,6 +6,7 @@ from django.db import IntegrityError
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import render
+from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.core.mail import send_mail
@@ -128,6 +129,34 @@ def atualizar_servicos(request):
         return resposta_servicos()
     except (ValidationError, InvalidOperation, ValueError, TypeError) as error:
         return erro(error)
+
+@require_GET
+def listar_agendamentos_admin(request):
+    if not request.user.is_authenticated or not request.user.is_staff:
+        return erro('Acesso restrito a administradores.', 403)
+
+    appointments = (
+        Agendamento.objects.filter(status='agendado', data__gte=timezone.localdate())
+        .prefetch_related('itens_contratados__servico')
+        .order_by('data', 'horario')
+    )
+    response = JsonResponse({
+        'agendamentos': [
+            {
+                'id': appointment.pk,
+                'nome': appointment.cliente_nome,
+                'horario': appointment.horario.strftime('%H:%M'),
+                'servico': ' + '.join(
+                    item.servico.nome for item in appointment.itens_contratados.all()
+                ),
+                'valor': float(appointment.valor_total),
+                'data': appointment.data.isoformat(),
+            }
+            for appointment in appointments
+        ],
+    })
+    response['Cache-Control'] = 'no-store'
+    return response
 
 @require_POST
 def cadastrar_cliente(request):

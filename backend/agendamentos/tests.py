@@ -144,3 +144,10 @@ class ServiceManagementApiTests(TestCase):
 		self.service.refresh_from_db()
 		self.assertEqual(self.service.nome, 'Corte')
 		self.assertEqual(self.service.preco, Decimal('50.00'))
+
+
+class AdminAppointmentsApiTests(TestCase):
+	def test_appointment_list_requires_staff_login(self):
+		response = self.client.get('/api/admin/agendamentos/')
+
+		self.assertEqual(response.status_code, 403)

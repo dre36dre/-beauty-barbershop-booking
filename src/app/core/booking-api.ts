@@ -33,6 +33,15 @@ export interface CreatedBooking {
   duracao_total: number;
 }
 
+export interface ServerAppointment {
+  id: number;
+  nome: string;
+  horario: string;
+  servico: string;
+  valor: number;
+  data: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class BookingApi {
   private readonly http = inject(HttpClient);
@@ -51,6 +60,13 @@ export class BookingApi {
     return this.http.get<{ servicos: SalonService[] }>(`${this.baseUrl}/servicos/`, {
       withCredentials: true,
     });
+  }
+
+  getAdminAppointments(): Observable<{ agendamentos: ServerAppointment[] }> {
+    return this.http.get<{ agendamentos: ServerAppointment[] }>(
+      `${this.baseUrl}/admin/agendamentos/`,
+      { withCredentials: true },
+    );
   }
 
   updateServices(services: SalonService[]): Observable<{ servicos: SalonService[] }> {

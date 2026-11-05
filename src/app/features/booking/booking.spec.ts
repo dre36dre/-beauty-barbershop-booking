@@ -137,4 +137,66 @@ describe('Booking Component', () => {
     expect(component.errorMessage).toContain('passou');
     expect(component.success).toBeNull();
   });
+
+  it('should only confirm and store a booking after the server saves it', () => {
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne('/api/csrf/').flush({ ok: true });
+    http.expectOne('/api/servicos/').flush({ servicos: component.services });
+
+    component.client = {
+      nome: 'Cliente de teste',
+      telefone: '11999999999',
+      anotacao: '',
+      email: 'cliente@example.com',
+      endereco: '',
+    };
+    component.selectedServices = [1];
+    component.selectedDate = '2099-12-01';
+    component.selectedTime = '10:00';
+    component.submitBooking();
+
+    expect(component.errorMessage).toBe('');
+    expect(component.success).toBeNull();
+    expect(component.submitting).toBe(true);
+    http.expectOne('/api/clientes/').flush({ id: 21, nome: 'Cliente de teste' });
+    http.expectOne('/api/agendamentos/').flush({
+      id: 45,
+      status: 'agendado',
+      valor_total: '50.00',
+      duracao_total: 45,
+    });
+
+    expect(component.success?.id).toBe(45);
+    expect(TestBed.inject(AppointmentStore).all().some((appointment) => appointment.id === 45)).toBe(true);
+    expect(component.submitting).toBe(false);
+  });
+
+  it('should not create a local appointment when the server rejects it', () => {
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne('/api/csrf/').flush({ ok: true });
+    http.expectOne('/api/servicos/').flush({ servicos: component.services });
+
+    component.client = {
+      nome: 'Cliente sem confirmação',
+      telefone: '11999999999',
+      anotacao: '',
+      email: 'cliente@example.com',
+      endereco: '',
+    };
+    component.selectedServices = [1];
+    component.selectedDate = '2099-12-01';
+    component.selectedTime = '10:00';
+    component.submitBooking();
+
+    expect(component.errorMessage).toBe('');
+    http.expectOne('/api/clientes/').flush({ id: 22, nome: 'Cliente sem confirmação' });
+    http.expectOne('/api/agendamentos/').flush(
+      { erro: 'Horário indisponível.' },
+      { status: 409, statusText: 'Conflict' },
+    );
+
+    expect(component.success).toBeNull();
+    expect(component.errorMessage.toLowerCase()).toContain('não foi possível salvar');
+    expect(TestBed.inject(AppointmentStore).all().some((appointment) => appointment.nome === 'Cliente sem confirmação')).toBe(false);
+  });
 });

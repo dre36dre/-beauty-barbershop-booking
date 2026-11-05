@@ -138,7 +138,7 @@ export class Booking implements OnInit {
       const minute = String(minutes % 60).padStart(2, '0');
       const time = `${hour}:${minute}`;
 
-      const isBooked = this.isTimeBooked(this.selectedDate, time);
+      const isBooked = !this.backendAvailable && this.isTimeBooked(this.selectedDate, time);
       const isBlocked = this.isTimeBlocked(this.selectedDate, time);
       const isAvailableInTimes = this.times.length === 0 || this.times.includes(time);
       const available = !isBooked && !isBlocked && isAvailableInTimes;
@@ -301,6 +301,8 @@ export class Booking implements OnInit {
   }
 
   submitBooking(): void {
+    if (this.submitting) return;
+
     if (!this.selectedServices.length || !this.selectedDate || !this.selectedTime) {
       this.errorMessage = 'Escolha os serviços, a data e o horário.';
       this.cdr.markForCheck();
@@ -319,6 +321,12 @@ export class Booking implements OnInit {
       return;
     }
 
+    if (!this.backendAvailable) {
+      this.errorMessage = 'O sistema de agendamento está indisponível. Tente novamente mais tarde; nenhuma reserva foi feita.';
+      this.cdr.markForCheck();
+      return;
+    }
+
     if (this.isTimeBlocked(this.selectedDate, this.selectedTime)) {
       const block = this.appointmentStore.getBlockForDateTime(this.selectedDate, this.selectedTime);
       const motivo = block?.motivo ? ` (${block.motivo})` : '';
@@ -327,7 +335,7 @@ export class Booking implements OnInit {
       return;
     }
 
-    if (this.isTimeBooked(this.selectedDate, this.selectedTime)) {
+    if (!this.backendAvailable && this.isTimeBooked(this.selectedDate, this.selectedTime)) {
       this.errorMessage = 'Este horário já está reservado. Por favor, escolha outro horário.';
       this.cdr.markForCheck();
       return;
@@ -338,41 +346,9 @@ export class Booking implements OnInit {
     }
 
     this.errorMessage = '';
-
-    // Registra imediatamente no store compartilhado (dispara alerta sonoro e visual para o Admin)
     const servicoNomes = this.selectedServiceDetails.map((s) => s.nome).join(' + ');
     const clientName = this.client.nome.trim() || 'Cliente';
     const clientNote = this.client.anotacao?.trim() || '';
-    this.appointmentStore.add({
-      nome: clientName,
-      horario: this.selectedTime,
-      servico: servicoNomes,
-      valor: this.selectedSubtotal,
-      data: this.selectedDate,
-      observacoes: clientNote,
-    }, 'cliente');
-
-    // Salva o cliente na lista de clientes do Admin se ainda não estiver cadastrado
-    try {
-      if (typeof localStorage !== 'undefined' && clientName) {
-        const raw = localStorage.getItem('vsn_clients');
-        const list = raw ? JSON.parse(raw) : [];
-        if (!list.some((c: { nome: string }) => c.nome.toLowerCase() === clientName.toLowerCase())) {
-          list.unshift({
-            id: Date.now(),
-            nome: clientName,
-            telefone: this.client.telefone || '(11) 99999-9999',
-            email: this.client.email || `${clientName.toLowerCase().replace(/\s+/g, '.')}@email.com`,
-            dataNascimento: '15/05/1992',
-            preferencia: clientNote ? `${servicoNomes} (${clientNote})` : servicoNomes,
-          });
-          localStorage.setItem('vsn_clients', JSON.stringify(list));
-        }
-      }
-    } catch {
-      // Ignora erro de storage local
-    }
-
     const booking = {
       profissional_id: Number(this.selectedProfessional),
       data: this.selectedDate,
@@ -380,47 +356,48 @@ export class Booking implements OnInit {
       servicos: [...this.selectedServices],
     };
 
-    // Confirmação instantânea na tela para o usuário (0ms de espera)
-    this.success = {
-      id: Math.floor(1000 + Math.random() * 9000),
-      status: 'Confirmado',
-      valor_total: this.summary?.valor_total ?? this.selectedSubtotal.toFixed(2),
-      duracao_total: this.summary?.duracao_total
-        ?? this.selectedServiceDetails.reduce((total, service) => total + service.duracao, 0),
-    };
-    this.submitting = false;
+    this.submitting = true;
     this.cdr.markForCheck();
 
-    // Se o backend estiver ativo, sincroniza em segundo plano
-    if (this.backendAvailable) {
-      this.api.createClient({
-        nome: this.client.nome,
-        telefone: this.client.telefone,
-        endereco: clientNote || 'Sem anotações',
-        email: this.client.email,
-        anotacao: clientNote,
-      }).pipe(
+    this.api.createClient({
+      nome: this.client.nome,
+      telefone: this.client.telefone,
+      endereco: clientNote || 'Sem anotações',
+      email: this.client.email,
+      anotacao: clientNote,
+    }).pipe(
         timeout(3000),
         switchMap((createdClient) => this.api.createBooking({ ...booking, cliente_id: createdClient.id }).pipe(timeout(3000))),
       ).subscribe({
         next: (createdBooking) => {
-          if (createdBooking?.id) {
-            this.success = {
-              ...createdBooking,
-              valor_total: this.selectedSubtotal.toFixed(2),
-              duracao_total: this.selectedServiceDetails.reduce(
-                (total, service) => total + service.duracao,
-                0,
-              ),
-            };
+          if (!createdBooking?.id) {
+            this.errorMessage = 'O servidor não confirmou o agendamento. Nenhuma reserva foi registrada.';
+            this.submitting = false;
             this.cdr.markForCheck();
+            return;
           }
+
+          this.appointmentStore.add({
+            id: createdBooking.id,
+            nome: clientName,
+            horario: this.selectedTime,
+            servico: servicoNomes,
+            valor: Number(createdBooking.valor_total),
+            data: this.selectedDate,
+            observacoes: clientNote,
+          }, 'cliente');
+          this.success = createdBooking;
+          this.submitting = false;
+          this.cdr.markForCheck();
         },
-        error: () => {
-          // Mantém a confirmação imediata já visível
+        error: (error: unknown) => {
+          this.errorMessage = error instanceof Error && error.name === 'TimeoutError'
+            ? 'O servidor demorou para responder. Verifique a conexão e tente novamente.'
+            : 'Não foi possível salvar o agendamento no servidor. Nenhuma reserva foi confirmada.';
+          this.submitting = false;
+          this.cdr.markForCheck();
         },
       });
-    }
   }
 
   formatPrice(value: string | number): string {
@@ -466,7 +443,7 @@ export class Booking implements OnInit {
         const validTimes = Object.keys(professionalsByTime).filter(
           (time) =>
             !this.isPastTime(this.selectedDate, time) &&
-            !this.isTimeBooked(this.selectedDate, time) &&
+            (this.backendAvailable || !this.isTimeBooked(this.selectedDate, time)) &&
             !this.isTimeBlocked(this.selectedDate, time)
         ).sort();
         this.professionalsByTime = professionalsByTime;

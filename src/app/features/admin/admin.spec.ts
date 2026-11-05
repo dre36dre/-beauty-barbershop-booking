@@ -28,6 +28,7 @@ describe('Admin Component', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
     http.expectOne('/api/servicos/').flush({ servicos: store.services() });
+    http.expectOne('/api/admin/agendamentos/').flush({ agendamentos: store.all() });
   });
 
   it('should create admin component', () => {

@@ -1241,6 +1241,24 @@
   margin: 12px 20px 0;
 }
 
+.appointment-sync-message {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  margin: 0 24px 16px;
+  padding: 12px 16px;
+  border: 1px solid #d6a64b;
+  border-radius: 6px;
+  color: #f0d28e;
+  font-size: 13px;
+}
+
+.appointment-sync-message a {
+  color: #f5ca69;
+  font-weight: 600;
+}
+
 .highlight-service-name {
   color: #f7f7f7;
   font-weight: 600;
@@ -1624,4 +1642,3 @@
     grid-template-columns: 1fr;
   }
 }
-

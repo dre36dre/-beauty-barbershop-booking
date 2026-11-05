@@ -65,6 +65,7 @@ export class Admin implements OnInit, OnDestroy {
   editingServices: SalonService[] = [];
   servicesFeedback = '';
   savingServices = false;
+  appointmentSyncMessage = '';
 
   openServicesModal(): void {
     this.editingServices = this.salonServices().map((s) => ({ ...s }));
@@ -334,6 +335,20 @@ export class Admin implements OnInit, OnDestroy {
       },
       error: () => {
         this.servicesFeedback = 'Não foi possível carregar os serviços do servidor.';
+        this.cdr.markForCheck();
+      },
+    });
+    this.api.getAdminAppointments().pipe(timeout(5000)).subscribe({
+      next: ({ agendamentos }) => {
+        this.store.replaceAppointmentsFromServer(agendamentos);
+        this.appointmentSyncMessage = '';
+        this.cdr.markForCheck();
+      },
+      error: (error: unknown) => {
+        this.store.replaceAppointmentsFromServer([]);
+        this.appointmentSyncMessage = error instanceof HttpErrorResponse && error.status === 403
+          ? 'Entre com uma conta administradora para consultar os agendamentos compartilhados.'
+          : 'Não foi possível carregar os agendamentos do servidor. Os dados locais não são considerados confirmados.';
         this.cdr.markForCheck();
       },
     });

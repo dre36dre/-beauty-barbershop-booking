@@ -5,6 +5,7 @@ urlpatterns = [
     path('api/csrf/', views.csrf_token, name='api_csrf'),
     path('api/servicos/', views.listar_servicos, name='api_servicos'),
     path('api/servicos/atualizar/', views.atualizar_servicos, name='api_atualizar_servicos'),
+    path('api/admin/agendamentos/', views.listar_agendamentos_admin, name='api_admin_agendamentos'),
     path('api/clientes/', views.cadastrar_cliente, name='api_clientes'),
     path('api/profissionais/', views.profissionais_disponiveis, name='api_profissionais'),
     path('api/horarios/', views.horarios_disponiveis, name='api_horarios'),

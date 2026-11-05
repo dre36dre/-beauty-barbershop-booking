@@ -123,6 +123,11 @@ export class AppointmentStore {
     this.saveServicesToStorage();
   }
 
+  replaceAppointmentsFromServer(appointments: AppointmentEntry[]): void {
+    this._appointments.set(appointments);
+    this.saveToStorage();
+  }
+
   /** Quantidade de alertas não lidos */
   readonly unreadAlertsCount = computed(() => {
     return this._alerts().filter((a) => !a.lido).length;
@@ -262,8 +267,11 @@ export class AppointmentStore {
   }
 
   /** Adiciona um agendamento, persiste e dispara alerta para o Admin */
-  add(entry: Omit<AppointmentEntry, 'id'>, origem: 'cliente' | 'admin' = 'cliente'): AppointmentEntry {
-    const newEntry: AppointmentEntry = { ...entry, id: Date.now() };
+  add(
+    entry: Omit<AppointmentEntry, 'id'> & { id?: number },
+    origem: 'cliente' | 'admin' = 'cliente',
+  ): AppointmentEntry {
+    const newEntry: AppointmentEntry = { ...entry, id: entry.id ?? Date.now() };
     this._appointments.update((prev) => [...prev, newEntry]);
     this.saveToStorage();
 
@@ -643,4 +651,3 @@ export class AppointmentStore {
     ];
   }
 }
-
