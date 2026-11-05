@@ -35,17 +35,46 @@ export interface BlockedSlot {
   criadoEm: string; // ISO string
 }
 
-export const DEFAULT_SALON_SERVICES: SalonService[] = [
-  { id: 1, nome: 'Corte', preco: '50.00', duracao: 45, descricao: 'Corte personalizado feminino e masculino com acabamento profissional' },
-  { id: 2, nome: 'Coloração', preco: '120.00', duracao: 90, descricao: 'Coloração integral com cobertura uniforme e produtos profissionais' },
-  { id: 3, nome: 'Escova', preco: '45.00', duracao: 40, descricao: 'Lavagem especial, secagem e modelagem impecável dos fios' },
-  { id: 4, nome: 'Progressiva', preco: '180.00', duracao: 120, descricao: 'Alinhamento térmico capilar de alta performance e brilho espelhado' },
-  { id: 5, nome: 'Botox / Selagem', preco: '150.00', duracao: 90, descricao: 'Redução de volume e frizz com reposição profunda de massa capilar' },
-  { id: 6, nome: 'Soltura de Cachos', preco: '140.00', duracao: 90, descricao: 'Definição natural, soltura e hidratação profunda para cabelos cacheados e crespos' },
-  { id: 7, nome: 'Tratamento', preco: '80.00', duracao: 50, descricao: 'Cronograma capilar intensivo com nutrição, hidratação e reconstrução' },
-  { id: 8, nome: 'Luzes', preco: '220.00', duracao: 150, descricao: 'Mechas e pontos de luz com técnica personalizada e clareamento seguro' },
-  { id: 9, nome: 'Design de Sobrancelhas', preco: '35.00', duracao: 30, descricao: 'Desenho harmônico, alinhamento e valorização do olhar' },
+export const CUSTOM_SALON_SERVICES: SalonService[] = [
+  // Cortes
+  { id: 1, nome: 'Corte', preco: '50.00', duracao: 60, descricao: 'Corte tradicional' },
+  // Colorações
+  { id: 2, nome: 'Coloração raiz', preco: '60.00', duracao: 70, descricao: 'Coloração na raiz' },
+  { id: 3, nome: 'Coloração comprimento', preco: '120.00', duracao: 80, descricao: 'Coloração ao comprimento' },
+  { id: 4, nome: 'Aplicação de coloração raiz (com sua tinta)', preco: '40.00', duracao: 70, descricao: 'Aplicação de tinta na raiz' },
+  { id: 5, nome: 'Aplicação coloração comprimento (com sua tinta)', preco: '60.00', duracao: 80, descricao: 'Aplicação de tinta ao comprimento' },
+  // Luzes & destaques
+  { id: 6, nome: 'Luzes a partir de', preco: '250.00', duracao: 360, descricao: 'Luzes em todo o cabelo' },
+  { id: 7, nome: 'Morena iluminada a partir de', preco: '250.00', duracao: 240, descricao: 'Técnica morena iluminada' },
+  // Progressiva (tamanhos)
+  { id: 8, nome: 'Progressiva cabelo curto', preco: '130.00', duracao: 120, descricao: 'Progressiva para cabelo curto' },
+  { id: 9, nome: 'Progressiva médio', preco: '150.00', duracao: 180, descricao: 'Progressiva para cabelo médio' },
+  { id:10, nome: 'Progressiva longo', preco: '170.00', duracao: 180, descricao: 'Progressiva para cabelo longo' },
+  // Retoque de raiz
+  { id:11, nome: 'Retoque de raiz', preco: '150.00', duracao: 180, descricao: 'Retoque apenas na raiz' },
+  // Botox (tamanhos)
+  { id:12, nome: 'Botox cabelo curto', preco: '110.00', duracao: 120, descricao: 'Botox para cabelo curto' },
+  { id:13, nome: 'Botox cabelo médio', preco: '135.00', duracao: 180, descricao: 'Botox para cabelo médio' },
+  { id:14, nome: 'Botox cabelo longo', preco: '150.00', duracao: 180, descricao: 'Botox para cabelo longo' },
+  { id:15, nome: 'Retoque de raiz (Botox)', preco: '135.00', duracao: 180, descricao: 'Retoque de raiz com botox' },
+  // Soltura de cachos
+  { id:16, nome: 'Soltura de cachos a partir de', preco: '140.00', duracao: 120, descricao: 'Definição e soltura de cachos' },
+  // Design de sobrancelhas
+  { id:17, nome: 'Design de sobrancelhas', preco: '30.00', duracao: 30, descricao: 'Modelagem básica' },
+  { id:18, nome: 'Design de sobrancelhas com Henna', preco: '35.00', duracao: 45, descricao: 'Design + coloração com henna' },
+  { id:19, nome: 'Design de sobrancelhas + brow lamination', preco: '120.00', duracao: 60, descricao: 'Design + laminação' },
+  // Escova (tamanhos)
+  { id:20, nome: 'Escova cabelo curto', preco: '40.00', duracao: 60, descricao: 'Escova para cabelo curto' },
+  { id:21, nome: 'Escova médio', preco: '45.00', duracao: 60, descricao: 'Escova para cabelo médio' },
+  { id:22, nome: 'Escova longo', preco: '50.00', duracao: 90, descricao: 'Escova para cabelo longo' },
+  // Tratamento (tamanhos)
+  { id:23, nome: 'Tratamento cabelo curto', preco: '55.00', duracao: 40, descricao: 'Tratamento leve para cabelo curto' },
+  { id:24, nome: 'Tratamento médio', preco: '60.00', duracao: 40, descricao: 'Tratamento médio' },
+  { id:25, nome: 'Tratamento longo', preco: '65.00', duracao: 40, descricao: 'Tratamento profundo para cabelo longo' },
+  // Teste de coloração pessoal
+  { id:26, nome: 'Teste de coloração pessoal', preco: '140.00', duracao: 90, descricao: 'Teste de coloração em mechas' },
 ];
+export const DEFAULT_SALON_SERVICES = CUSTOM_SALON_SERVICES;
 
 const STORAGE_KEY = 'vsn_appointments';
 const ALERTS_STORAGE_KEY = 'vsn_admin_alerts';
@@ -128,7 +157,7 @@ export class AppointmentStore {
 
   /** Restaura todos os serviços para os valores e tempos padrão originais */
   resetServices(): void {
-    this._services.set([...DEFAULT_SALON_SERVICES]);
+    this._services.set([...CUSTOM_SALON_SERVICES]);
     this.saveServicesToStorage();
     this.broadcastServicesUpdate();
   }
@@ -516,9 +545,9 @@ export class AppointmentStore {
   private loadServicesFromStorage(): SalonService[] {
     try {
       const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(SERVICES_STORAGE_KEY) : null;
-      return raw ? (JSON.parse(raw) as SalonService[]) : [...DEFAULT_SALON_SERVICES];
+      return raw ? (JSON.parse(raw) as SalonService[]) : [...CUSTOM_SALON_SERVICES];
     } catch {
-      return [...DEFAULT_SALON_SERVICES];
+      return [...CUSTOM_SALON_SERVICES];
     }
   }
 
