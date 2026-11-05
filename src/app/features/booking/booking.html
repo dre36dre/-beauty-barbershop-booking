@@ -23,6 +23,13 @@
           </div>
           <div class="confirmed-total"><span>Subtotal</span><strong>{{ formatPrice(summary?.valor_total ?? success.valor_total) }}</strong><span>Total</span><strong>{{ formatPrice(success.valor_total) }}</strong></div>
         </div>
+        <a
+          class="whatsapp-button"
+          [href]="adminWhatsAppUrl"
+          target="_blank"
+          rel="noopener noreferrer">
+          Avisar a administradora pelo WhatsApp
+        </a>
         <a class="primary-button" routerLink="/">Voltar ao início</a>
       </div>
     } @else {

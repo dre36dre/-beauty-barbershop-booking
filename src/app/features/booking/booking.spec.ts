@@ -199,4 +199,28 @@ describe('Booking Component', () => {
     expect(component.errorMessage.toLowerCase()).toContain('não foi possível salvar');
     expect(TestBed.inject(AppointmentStore).all().some((appointment) => appointment.nome === 'Cliente sem confirmação')).toBe(false);
   });
+
+  it('should prepare a WhatsApp message with the confirmed booking details', () => {
+    component.client.nome = 'Maria Silva';
+    component.client.telefone = '11987654321';
+    component.selectedDate = '2099-12-01';
+    component.selectedTime = '10:30';
+    component.selectedServices = [1];
+    component.success = {
+      id: 45,
+      status: 'agendado',
+      valor_total: '50.00',
+      duracao_total: 45,
+    };
+
+    const whatsappUrl = new URL(component.adminWhatsAppUrl);
+    const message = whatsappUrl.searchParams.get('text') ?? '';
+
+    expect(whatsappUrl.pathname).toBe('/5511992670080');
+    expect(message).toContain('Protocolo: #45');
+    expect(message).toContain('Cliente: Maria Silva');
+    expect(message).toContain('Telefone: 11987654321');
+    expect(message).toContain('Serviço(s): Corte');
+    expect(message).toContain('10:30');
+  });
 });

@@ -153,6 +153,8 @@ h1 { margin: 0; color: #f2e8e8; font-size: clamp(27px, 5vw, 38px); font-weight: 
 .success-card > p:not(.section-kicker) { margin: 10px 0 0; color: #b8adae; font-size: 14px; }
 .success-details { display: grid; gap: 11px; margin: 27px 0; padding: 18px; border: 1px solid rgb(222 188 190 / 13%); border-radius: 5px; background: #191719; color: #a99fa0; font-size: 13px; }
 .success-details strong { margin-left: 5px; color: #f4e5e5; }
+.whatsapp-button { display: flex; min-height: 48px; align-items: center; justify-content: center; margin: 0 auto 12px; padding: 0 22px; border: 1px solid #25d366; border-radius: 4px; background: #128c4a; color: #fff; font-size: 13px; font-weight: 650; text-decoration: none; }
+.whatsapp-button:hover { background: #0e773e; }
 .confirmed-services { display: grid; gap: 11px; margin-top: 8px; padding-top: 16px; border-top: 1px solid rgb(222 188 190 / 12%); text-align: left; }
 .confirmed-services h2 { margin: 0 0 2px; color: #f1e5e5; font-size: 14px; }
 .confirmed-service, .confirmed-total { display: flex; justify-content: space-between; gap: 14px; color: #b9adae; }
