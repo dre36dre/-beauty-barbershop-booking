@@ -121,8 +121,11 @@ export class Booking implements OnInit {
     const formattedDate = new Intl.DateTimeFormat('pt-BR').format(
       new Date(year, month - 1, day),
     );
+    const isLocalRequest = this.success?.status === 'local';
     const message = [
-      'Olá! Novo agendamento confirmado pelo site.',
+      isLocalRequest
+        ? 'Olá! Fiz uma solicitação de agendamento pelo site. Ela ainda precisa ser confirmada.'
+        : 'Olá! Novo agendamento confirmado pelo site.',
       `Protocolo: #${this.success?.id}`,
       `Cliente: ${this.client.nome}`,
       `Telefone: ${this.client.telefone}`,
@@ -339,12 +342,6 @@ export class Booking implements OnInit {
       return;
     }
 
-    if (!this.backendAvailable) {
-      this.errorMessage = 'O sistema de agendamento está indisponível. Tente novamente mais tarde; nenhuma reserva foi feita.';
-      this.cdr.markForCheck();
-      return;
-    }
-
     if (this.isTimeBlocked(this.selectedDate, this.selectedTime)) {
       const block = this.appointmentStore.getBlockForDateTime(this.selectedDate, this.selectedTime);
       const motivo = block?.motivo ? ` (${block.motivo})` : '';
@@ -354,7 +351,7 @@ export class Booking implements OnInit {
     }
 
     if (!this.backendAvailable && this.isTimeBooked(this.selectedDate, this.selectedTime)) {
-      this.errorMessage = 'Este horário já está reservado. Por favor, escolha outro horário.';
+      this.errorMessage = 'Este horário já está anotado neste dispositivo. Por favor, escolha outro horário.';
       this.cdr.markForCheck();
       return;
     }
@@ -376,6 +373,29 @@ export class Booking implements OnInit {
 
     this.submitting = true;
     this.cdr.markForCheck();
+
+    if (!this.backendAvailable) {
+      const localAppointment = this.appointmentStore.add({
+        nome: clientName,
+        horario: this.selectedTime,
+        servico: servicoNomes,
+        valor: this.selectedSubtotal,
+        data: this.selectedDate,
+        observacoes: clientNote,
+      }, 'cliente');
+      this.success = {
+        id: localAppointment.id,
+        status: 'local',
+        valor_total: this.selectedSubtotal.toFixed(2),
+        duracao_total: this.selectedServiceDetails.reduce(
+          (total, service) => total + service.duracao,
+          0,
+        ),
+      };
+      this.submitting = false;
+      this.cdr.markForCheck();
+      return;
+    }
 
     this.api.createClient({
       nome: this.client.nome,

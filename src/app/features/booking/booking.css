@@ -151,6 +151,7 @@ h1 { margin: 0; color: #f2e8e8; font-size: clamp(27px, 5vw, 38px); font-weight: 
 .success-mark { display: grid; width: 55px; height: 55px; margin: 0 auto 21px; place-items: center; border: 1px solid #a64b57; border-radius: 50%; color: #f0a8ad; font-size: 26px; }
 .success-card .section-kicker { margin: 0 0 10px; }
 .success-card > p:not(.section-kicker) { margin: 10px 0 0; color: #b8adae; font-size: 14px; }
+.success-card .local-booking-warning { padding: 12px 14px; border: 1px solid #d6a64b; border-radius: 5px; background: rgb(214 166 75 / 10%); color: #f0d28e; line-height: 1.6; }
 .success-details { display: grid; gap: 11px; margin: 27px 0; padding: 18px; border: 1px solid rgb(222 188 190 / 13%); border-radius: 5px; background: #191719; color: #a99fa0; font-size: 13px; }
 .success-details strong { margin-left: 5px; color: #f4e5e5; }
 .whatsapp-button { display: flex; min-height: 48px; align-items: center; justify-content: center; margin: 0 auto 12px; padding: 0 22px; border: 1px solid #25d366; border-radius: 4px; background: #128c4a; color: #fff; font-size: 13px; font-weight: 650; text-decoration: none; }

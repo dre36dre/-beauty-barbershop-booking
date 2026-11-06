@@ -9,9 +9,18 @@
     @if (success) {
       <div class="success-card" role="status">
         <span class="success-mark" aria-hidden="true">✓</span>
-        <p class="section-kicker">AGENDAMENTO CONFIRMADO</p>
+        <p class="section-kicker">
+          {{ success.status === 'local' ? 'SOLICITAÇÃO SALVA NESTE DISPOSITIVO' : 'AGENDAMENTO CONFIRMADO' }}
+        </p>
         <h1>Prontinho, {{ client.nome }}!</h1>
-        <p>Seu horário foi reservado com sucesso.</p>
+        @if (success.status === 'local') {
+          <p class="local-booking-warning">
+            A solicitação ficou salva somente neste dispositivo e ainda não está confirmada pelo salão.
+            Envie os dados pelo WhatsApp para verificar a disponibilidade.
+          </p>
+        } @else {
+          <p>Seu horário foi reservado com sucesso.</p>
+        }
         <div class="success-details">
           <span>Protocolo <strong>#{{ success.id }}</strong></span>
           <span>Data <strong>{{ selectedDate | date:'dd/MM/yyyy' }}</strong></span>
@@ -28,7 +37,7 @@
           [href]="adminWhatsAppUrl"
           target="_blank"
           rel="noopener noreferrer">
-          Avisar a administradora pelo WhatsApp
+          {{ success.status === 'local' ? 'Enviar solicitação pelo WhatsApp' : 'Avisar a administradora pelo WhatsApp' }}
         </a>
         <a class="primary-button" routerLink="/">Voltar ao início</a>
       </div>

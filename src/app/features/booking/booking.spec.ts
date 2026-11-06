@@ -138,6 +138,35 @@ describe('Booking Component', () => {
     expect(component.success).toBeNull();
   });
 
+  it('should save a local request when the booking API is unavailable without claiming server confirmation', () => {
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne('/api/csrf/').error(new ProgressEvent('error'));
+
+    component.client = {
+      nome: 'Cliente local',
+      telefone: '11999999999',
+      anotacao: '',
+      email: 'cliente@example.com',
+      endereco: '',
+    };
+    component.selectedServices = [1];
+    component.selectedDate = '2099-12-01';
+    component.selectedTime = '10:00';
+    component.submitBooking();
+    fixture.detectChanges();
+
+    expect(component.success?.status).toBe('local');
+    expect(component.success?.id).toBeGreaterThan(0);
+    expect(TestBed.inject(AppointmentStore).all().some(
+      (appointment) =>
+        appointment.nome === 'Cliente local' &&
+        appointment.data === '2099-12-01' &&
+        appointment.horario === '10:00',
+    )).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('ainda não está confirmada pelo salão');
+    expect(fixture.nativeElement.textContent).toContain('Enviar solicitação pelo WhatsApp');
+  });
+
   it('should create the admin WhatsApp alert link with confirmed booking details', () => {
     component.client.nome = 'Maria Silva';
     component.client.telefone = '11987654321';
