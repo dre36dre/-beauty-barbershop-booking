@@ -1,9 +1,25 @@
 from django.test import SimpleTestCase
+from unittest.mock import patch
 
 from .settings import BASE_DIR, _database_config
 
 
 class DatabaseConfigTests(SimpleTestCase):
+    def test_database_url_diagnostic_reports_presence_without_exposing_value(self):
+        with patch.dict('os.environ', {'DATABASE_URL': 'postgresql://user:secret@db.example.com/barbearia'}):
+            response = self.client.get('/teste/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'db_configurada': True})
+        self.assertNotIn('secret', response.content.decode())
+
+    def test_database_url_diagnostic_reports_missing_variable(self):
+        with patch.dict('os.environ', {'DATABASE_URL': ''}):
+            response = self.client.get('/teste/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'db_configurada': False})
+
     def test_local_mysql_config(self):
         config = _database_config({
             'DB_ENGINE': 'mysql',

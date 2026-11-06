@@ -12,8 +12,9 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 
 from pathlib import Path
 import os
-from urllib.parse import parse_qsl, unquote, urlparse
+from urllib.parse import parse_qsl, urlparse
 
+import dj_database_url
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -122,23 +123,23 @@ def _database_config(environment=None):
         ):
             raise ValueError('DATABASE_URL precisa ser uma URL PostgreSQL válida.')
 
-        options = dict(parse_qsl(parsed.query))
+        database = dj_database_url.parse(database_url)
+        if database.get('ENGINE') != 'django.db.backends.postgresql':
+            raise ValueError('DATABASE_URL precisa ser uma URL PostgreSQL válida.')
+
+        database['CONN_MAX_AGE'] = int(env.get('DB_CONN_MAX_AGE', '0'))
+        database['CONN_HEALTH_CHECKS'] = True
+        options = {
+            **dict(parse_qsl(parsed.query)),
+            **database.get('OPTIONS', {}),
+        }
         sslmode = env.get('POSTGRES_SSLMODE') or env.get('PGSSLMODE')
         options.setdefault(
             'sslmode',
             sslmode or ('disable' if parsed.hostname in ('localhost', '127.0.0.1') else 'require'),
         )
-        return {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': unquote(parsed.path.lstrip('/')),
-            'USER': unquote(parsed.username or ''),
-            'PASSWORD': unquote(parsed.password or ''),
-            'HOST': parsed.hostname,
-            'PORT': str(parsed.port or 5432),
-            'OPTIONS': options,
-            'CONN_MAX_AGE': int(env.get('DB_CONN_MAX_AGE', '0')),
-            'CONN_HEALTH_CHECKS': True,
-        }
+        database['OPTIONS'] = options
+        return database
 
     debug = env.get('DJANGO_DEBUG', '0' if env.get('VERCEL') else '1') == '1'
     if env.get('VERCEL') and not debug:

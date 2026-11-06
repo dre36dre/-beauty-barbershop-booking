@@ -20,6 +20,8 @@ If the API is unavailable, the booking page can save a request in the current br
 
 The Vercel configuration in `vercel.json` serves Angular and routes API requests to the Python functions in `api/`, which invoke the Django application in `backend/`. The Django source is included in this repository, so Vercel does not need to fetch a separate submodule. Vercel installs Python dependencies from the root `requirements.txt`. Before deploying, connect a persistent PostgreSQL database to the Vercel project and set `DATABASE_URL` (or `POSTGRES_URL`) and a private `DJANGO_SECRET_KEY` in the Production environment. Set `DJANGO_ALLOWED_HOSTS` to `beauty-barbershop-booking.vercel.app` and any other domains you use. Each Production deployment applies Django database migrations before building the frontend, so Production environment variables must be available to the build. Create a Django staff user after the initial deployment. The service catalog and bookings are shared through that database. Sign in at `/django-admin/` before saving service changes in the Angular admin panel; the `/admin` path remains the Angular dashboard.
 
+Temporary deployment diagnostic: visit `/teste` to check whether `DATABASE_URL` is present in the Django runtime. The response exposes only a boolean; remove this endpoint after the deployment check.
+
 On Windows, install Python and the backend dependencies with `py -m pip install -r requirements.txt`. For local development, create the ignored configuration file and choose a database with `DB_ENGINE` in `backend\.env` (`postgresql`, `mysql`, or `sqlite`):
 
 ```powershell
