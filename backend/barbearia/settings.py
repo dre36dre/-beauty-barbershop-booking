@@ -14,7 +14,10 @@ from pathlib import Path
 import os
 from urllib.parse import parse_qsl, unquote, urlparse
 
+from dotenv import load_dotenv
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / '.env')
 
 DEBUG = os.environ.get('DJANGO_DEBUG', '0' if os.environ.get('VERCEL') else '1') == '1'
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
@@ -102,54 +105,85 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'barbearia.wsgi.application'
 
-def postgres_database():
+def _database_config(environment=None):
+    env = os.environ if environment is None else environment
     database_url = (
-        os.environ.get('DATABASE_URL')
-        or os.environ.get('POSTGRES_URL_NON_POOLING')
-        or os.environ.get('POSTGRES_URL')
+        env.get('DATABASE_URL', '').strip()
+        or env.get('POSTGRES_URL_NON_POOLING', '').strip()
+        or env.get('POSTGRES_URL', '').strip()
     )
 
     if database_url:
         parsed = urlparse(database_url)
-        if parsed.scheme not in ('postgres', 'postgresql'):
-            raise ValueError('DATABASE_URL precisa usar o esquema postgres:// ou postgresql://.')
+        if (
+            parsed.scheme not in ('postgres', 'postgresql')
+            or not parsed.hostname
+            or not parsed.path.strip('/')
+        ):
+            raise ValueError('DATABASE_URL precisa ser uma URL PostgreSQL válida.')
 
         options = dict(parse_qsl(parsed.query))
+        sslmode = env.get('POSTGRES_SSLMODE') or env.get('PGSSLMODE')
         options.setdefault(
             'sslmode',
-            os.environ.get('PGSSLMODE', 'disable' if parsed.hostname in ('localhost', '127.0.0.1') else 'require'),
+            sslmode or ('disable' if parsed.hostname in ('localhost', '127.0.0.1') else 'require'),
         )
         return {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': unquote(parsed.path.lstrip('/')),
             'USER': unquote(parsed.username or ''),
             'PASSWORD': unquote(parsed.password or ''),
-            'HOST': parsed.hostname or '',
+            'HOST': parsed.hostname,
             'PORT': str(parsed.port or 5432),
             'OPTIONS': options,
-            'CONN_MAX_AGE': int(os.environ.get('DB_CONN_MAX_AGE', '0')),
+            'CONN_MAX_AGE': int(env.get('DB_CONN_MAX_AGE', '0')),
             'CONN_HEALTH_CHECKS': True,
         }
 
-    if os.environ.get('VERCEL') and not DEBUG:
+    debug = env.get('DJANGO_DEBUG', '0' if env.get('VERCEL') else '1') == '1'
+    if env.get('VERCEL') and not debug:
         raise ValueError('Configure DATABASE_URL com um PostgreSQL persistente no ambiente Vercel.')
 
-    return {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('POSTGRES_DB', 'barbearia_db'),
-        'USER': os.environ.get('POSTGRES_USER', 'postgres'),
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
-        'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
-        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
-        'OPTIONS': {
-            'sslmode': os.environ.get('PGSSLMODE', 'disable'),
-        },
-        'CONN_MAX_AGE': int(os.environ.get('DB_CONN_MAX_AGE', '0')),
-        'CONN_HEALTH_CHECKS': True,
-    }
+    engine = env.get('DB_ENGINE', 'postgresql').strip().lower()
+    if engine in ('postgres', 'postgresql'):
+        host = env.get('POSTGRES_HOST', 'localhost')
+        return {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': env.get('POSTGRES_DB', 'barbearia_db'),
+            'USER': env.get('POSTGRES_USER', 'postgres'),
+            'PASSWORD': env.get('POSTGRES_PASSWORD', ''),
+            'HOST': host,
+            'PORT': env.get('POSTGRES_PORT', '5432'),
+            'OPTIONS': {
+                'sslmode': env.get(
+                    'POSTGRES_SSLMODE',
+                    env.get('PGSSLMODE', 'disable' if host in ('localhost', '127.0.0.1') else 'require'),
+                ),
+            },
+            'CONN_MAX_AGE': int(env.get('DB_CONN_MAX_AGE', '0')),
+            'CONN_HEALTH_CHECKS': True,
+        }
+
+    if engine == 'mysql':
+        return {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': env.get('MYSQL_DATABASE', 'barbearia_db'),
+            'USER': env.get('MYSQL_USER', 'root'),
+            'PASSWORD': env.get('MYSQL_PASSWORD', ''),
+            'HOST': env.get('MYSQL_HOST', 'localhost'),
+            'PORT': env.get('MYSQL_PORT', '3306'),
+        }
+
+    if engine == 'sqlite':
+        return {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': env.get('SQLITE_NAME', str(BASE_DIR / 'db.sqlite3')),
+        }
+
+    raise ValueError('DB_ENGINE deve ser mysql, postgresql ou sqlite.')
 
 
-DATABASES = {'default': postgres_database()}
+DATABASES = {'default': _database_config()}
 
 AUTH_PASSWORD_VALIDATORS = [
     {

@@ -14,15 +14,20 @@ Once the server is running, open your browser and navigate to `http://localhost:
 
 ## Booking API
 
-The `/agendar` page uses the Django API. Start the backend from `backend/` on `http://localhost:8000`, then run the Angular development server. `proxy.conf.json` forwards local `/api` requests to Django.
+The `/agendar` page uses the Django API. Install the root dependencies, copy `backend\.env.exemplo` to `backend\.env`, configure a local database, then start Django from `backend/` on `http://localhost:8000` and run the Angular development server. `proxy.conf.json` forwards local `/api` requests to Django.
 
-The Vercel configuration in `vercel.json` serves Angular and forwards `/api/*` to the Django function in `api/index.py`; Vercel auto-detects the Python function and bundles the backend source from `backend/`. The Django source is included in this repository, so Vercel does not need to fetch a separate submodule. Before deploying, connect a persistent PostgreSQL database to the Vercel project and set `DATABASE_URL` and a private `DJANGO_SECRET_KEY` in the Production environment. In the Vercel project settings, set `DJANGO_ALLOWED_HOSTS` to `beauty-barbershop-booking.vercel.app` and any other domains you use. Then apply the database migrations and create a Django staff user. The service catalog is shared through that database. Sign in at `/django-admin/` before saving service changes in the Angular admin panel; the `/admin` path remains the Angular dashboard.
+The Vercel configuration in `vercel.json` serves Angular and routes API requests to the Python functions in `api/`, which invoke the Django application in `backend/`. The Django source is included in this repository, so Vercel does not need to fetch a separate submodule. Before deploying, connect a persistent PostgreSQL database to the Vercel project and set `DATABASE_URL` (or `POSTGRES_URL`) and a private `DJANGO_SECRET_KEY` in the Production environment. Set `DJANGO_ALLOWED_HOSTS` to `beauty-barbershop-booking.vercel.app` and any other domains you use. Each Production deployment applies Django database migrations before building the frontend, so Production environment variables must be available to the build. Create a Django staff user after the initial deployment. The service catalog and bookings are shared through that database. Sign in at `/django-admin/` before saving service changes in the Angular admin panel; the `/admin` path remains the Angular dashboard.
 
-On Windows, install the backend dependencies with `pip install -r requirements.txt`, link the repository with the Vercel CLI, and run migrations and create a staff account with the production database credentials:
+On Windows, install Python and the backend dependencies with `py -m pip install -r requirements.txt`. For local development, create the ignored configuration file and choose a database with `DB_ENGINE` in `backend\.env` (`postgresql`, `mysql`, or `sqlite`):
 
 ```powershell
-vercel env run -e production -- python backend\manage.py migrate
-vercel env run -e production -- python backend\manage.py createsuperuser
+Copy-Item backend\.env.exemplo backend\.env
+```
+
+For Vercel, configure `DATABASE_URL` (or `POSTGRES_URL`) and `DJANGO_SECRET_KEY` in the Production environment, then link the repository with the Vercel CLI. Production migrations run automatically during deployment. To create a staff account after the first successful deployment, run:
+
+```powershell
+npx vercel env run -e production -- py backend\manage.py createsuperuser
 ```
 
 Never commit environment files or share database credentials.

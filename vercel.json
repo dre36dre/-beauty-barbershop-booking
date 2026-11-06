@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run build",
+  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then python -m pip install -r requirements.txt && python backend/manage.py migrate; fi && npm run build",
   "outputDirectory": "dist/beauty-barbershop-booking/browser",
   "rewrites": [
     { "source": "/django-admin", "destination": "/api/django-admin" },
