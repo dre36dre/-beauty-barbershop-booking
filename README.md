@@ -16,16 +16,16 @@ Once the server is running, open your browser and navigate to `http://localhost:
 
 The `/agendar` page uses the Django API. Start the backend from `backend/` on `http://localhost:8000`, then run the Angular development server. `proxy.conf.json` forwards local `/api` requests to Django.
 
-The Vercel configuration in `vercel.json` serves Angular and routes API requests to the Python functions in `api/`, which invoke the Django application in `backend/`. The Django source is included in this repository, so Vercel does not need to fetch a separate submodule. Before deploying, connect a persistent PostgreSQL database to the Vercel project and set `DATABASE_URL` (or `POSTGRES_URL`) and a private `DJANGO_SECRET_KEY` in the Production environment. Set `DJANGO_ALLOWED_HOSTS` to `beauty-barbershop-booking.vercel.app` and any other domains you use. Apply the database migrations before accepting bookings, then create a Django staff user. The service catalog and bookings are shared through that database. Sign in at `/django-admin/` before saving service changes in the Angular admin panel; the `/admin` path remains the Angular dashboard.
+The Vercel configuration in `vercel.json` serves Angular and forwards `/api/*` to the Django function in `api/index.py`; Vercel auto-detects the Python function and bundles the backend source from `backend/`. The Django source is included in this repository, so Vercel does not need to fetch a separate submodule. Before deploying, connect a persistent PostgreSQL database to the Vercel project and set `DATABASE_URL` and a private `DJANGO_SECRET_KEY` in the Production environment. In the Vercel project settings, set `DJANGO_ALLOWED_HOSTS` to `beauty-barbershop-booking.vercel.app` and any other domains you use. Then apply the database migrations and create a Django staff user. The service catalog is shared through that database. Sign in at `/django-admin/` before saving service changes in the Angular admin panel; the `/admin` path remains the Angular dashboard.
 
-On Windows, install Python and the backend dependencies with `py -m pip install -r requirements.txt`, then link the repository with the Vercel CLI. Run database commands through the CLI so Production variables are injected for that command; do not pull secrets into a local environment file:
+On Windows, install the backend dependencies with `pip install -r requirements.txt`, link the repository with the Vercel CLI, and run migrations and create a staff account with the production database credentials:
 
 ```powershell
-npx vercel env run -e production -- py backend\manage.py migrate
-npx vercel env run -e production -- py backend\manage.py createsuperuser
+vercel env run -e production -- python backend\manage.py migrate
+vercel env run -e production -- python backend\manage.py createsuperuser
 ```
 
-After migrations complete, verify that `https://beauty-barbershop-booking.vercel.app/api/servicos/` returns JSON with HTTP 200. Never commit environment files or share database credentials.
+Never commit environment files or share database credentials.
 
 ## Code scaffolding
 

@@ -117,7 +117,6 @@ export class Booking implements OnInit {
   success: CreatedBooking | null = null;
 
   get adminWhatsAppUrl(): string {
-    const phone = '5511992670080';
     const [year, month, day] = this.selectedDate.split('-').map(Number);
     const formattedDate = new Intl.DateTimeFormat('pt-BR').format(
       new Date(year, month - 1, day),
@@ -132,7 +131,7 @@ export class Booking implements OnInit {
       `Valor: ${this.formatPrice(this.success?.valor_total ?? 0)}`,
     ].join('\n');
 
-    return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    return `https://api.whatsapp.com/send/?phone=5511992670080&text=${encodeURIComponent(message)}&type=phone_number&app_absent=0`;
   }
 
   get timeOptions(): Array<{ time: string; available: boolean }> {
