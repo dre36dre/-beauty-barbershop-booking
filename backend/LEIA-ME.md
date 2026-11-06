@@ -32,7 +32,7 @@ O arquivo `.env` é ignorado pelo Git. Nunca coloque credenciais no código nem 
 
 O código do Django está em `backend/`, no mesmo repositório do front-end. As funções Python em `api/` encaminham as requisições para o Django. Não altere a raiz do projeto Vercel.
 
-Configure `DATABASE_URL` (ou `POSTGRES_URL`) e `DJANGO_SECRET_KEY` no ambiente Production da Vercel. O projeto também reconhece `POSTGRES_URL_NON_POOLING`. Configure `DJANGO_ALLOWED_HOSTS` com os domínios públicos exatos, separados por vírgula. As migrations são aplicadas automaticamente no build de Production; os valores Production precisam estar disponíveis durante o build. Após o primeiro deploy bem-sucedido, crie o usuário administrativo:
+Configure `DATABASE_URL` (ou `POSTGRES_URL`) e `DJANGO_SECRET_KEY` no ambiente Production da Vercel. O projeto também reconhece `POSTGRES_URL_NON_POOLING`. Configure `DJANGO_ALLOWED_HOSTS` com os domínios públicos exatos, separados por vírgula. A Vercel instala as dependências Python a partir do `requirements.txt` da raiz; não execute `pip install` no build command. As migrations são aplicadas automaticamente no build de Production; os valores Production precisam estar disponíveis durante o build. Após o primeiro deploy bem-sucedido, crie o usuário administrativo:
 
 ```powershell
 npx vercel env run -e production -- py backend\manage.py createsuperuser
