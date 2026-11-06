@@ -53,6 +53,12 @@ class DatabaseConfigTests(SimpleTestCase):
         self.assertEqual(config['ENGINE'], 'django.db.backends.sqlite3')
         self.assertEqual(config['NAME'], str(BASE_DIR / 'db.sqlite3'))
 
+    def test_local_database_defaults_to_sqlite(self):
+        config = _database_config({})
+
+        self.assertEqual(config['ENGINE'], 'django.db.backends.sqlite3')
+        self.assertEqual(config['NAME'], str(BASE_DIR / 'db.sqlite3'))
+
     def test_vercel_requires_a_persistent_postgresql_url(self):
         with self.assertRaises(ValueError):
             _database_config({'VERCEL': '1', 'DJANGO_DEBUG': '0', 'DB_ENGINE': 'sqlite'})

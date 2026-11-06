@@ -144,7 +144,7 @@ def _database_config(environment=None):
     if env.get('VERCEL') and not debug:
         raise ValueError('Configure DATABASE_URL com um PostgreSQL persistente no ambiente Vercel.')
 
-    engine = env.get('DB_ENGINE', 'postgresql').strip().lower()
+    engine = env.get('DB_ENGINE', 'sqlite').strip().lower()
     if engine in ('postgres', 'postgresql'):
         host = env.get('POSTGRES_HOST', 'localhost')
         return {

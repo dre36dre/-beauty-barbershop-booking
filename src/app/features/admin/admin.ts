@@ -345,7 +345,6 @@ export class Admin implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       },
       error: (error: unknown) => {
-        this.store.replaceAppointmentsFromServer([]);
         this.appointmentSyncMessage = error instanceof HttpErrorResponse && error.status === 403
           ? 'Entre com uma conta administradora para consultar os agendamentos compartilhados.'
           : 'Não foi possível carregar os agendamentos do servidor. Os dados locais não são considerados confirmados.';

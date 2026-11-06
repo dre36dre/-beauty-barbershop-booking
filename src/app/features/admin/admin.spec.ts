@@ -35,6 +35,28 @@ describe('Admin Component', () => {
     expect(component).toBeTruthy();
   });
 
+  it('should preserve local appointments when server sync fails', () => {
+    const localAppointment = store.add({
+      nome: 'Solicitação local',
+      horario: '15:00',
+      servico: 'Corte',
+      valor: 50,
+      data: store.todayDate(),
+    }, 'cliente');
+    const retryFixture = TestBed.createComponent(Admin);
+    retryFixture.detectChanges();
+
+    http.expectOne('/api/servicos/').error(new ProgressEvent('error'));
+    http.expectOne('/api/admin/agendamentos/').flush(
+      { erro: 'Banco indisponível.' },
+      { status: 500, statusText: 'Server Error' },
+    );
+
+    expect(store.all().some((appointment) => appointment.id === localAppointment.id)).toBe(true);
+    expect(retryFixture.componentInstance.appointmentSyncMessage).toContain('dados locais não são considerados confirmados');
+    retryFixture.destroy();
+  });
+
   it('should start on dashboard tab', () => {
     expect(component.activeTab).toBe('dashboard');
   });

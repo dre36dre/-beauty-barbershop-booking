@@ -14,7 +14,7 @@ Once the server is running, open your browser and navigate to `http://localhost:
 
 ## Booking API
 
-The `/agendar` page uses the Django API. Install the root dependencies, copy `backend\.env.exemplo` to `backend\.env`, configure a local database, then start Django from `backend/` on `http://localhost:8000` and run the Angular development server. `proxy.conf.json` forwards local `/api` requests to Django.
+The `/agendar` page uses the Django API. Install the root dependencies, copy `backend\.env.exemplo` to `backend\.env`, apply migrations, then start Django on `http://localhost:8000` and run the Angular development server in a second terminal. The local example uses SQLite by default, so no separate database server is required. `proxy.conf.json` forwards local `/api` requests to Django.
 
 If the API is unavailable, the booking page can save a request in the current browser as a local-only entry. It is not confirmed by the salon, is not shared with other devices, and is not saved to the server; use the WhatsApp button to check availability with the administrator.
 
@@ -24,6 +24,8 @@ On Windows, install Python and the backend dependencies with `py -m pip install 
 
 ```powershell
 Copy-Item backend\.env.exemplo backend\.env
+py backend\manage.py migrate
+py backend\manage.py runserver 8000
 ```
 
 For Vercel, configure `DATABASE_URL` (or `POSTGRES_URL`) and `DJANGO_SECRET_KEY` in the Production environment, then link the repository with the Vercel CLI. Production migrations run automatically during deployment. To create a staff account after the first successful deployment, run:
