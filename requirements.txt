@@ -1,6 +1,6 @@
 Django==5.2.17
 mysqlclient==2.3.0; sys_platform == "win32"
-psycopg2-binary>=2.9.9,<3
+psycopg[binary]>=3.2,<4
 typing_extensions>=4.12,<5
 django-cors-headers==4.7.0
 python-dotenv>=1.0,<2.0
