@@ -12,8 +12,12 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'barbearia.settings')
 
 def initialization_error():
     missing = []
-    if not os.environ.get('DJANGO_SECRET_KEY'):
-        missing.append('DJANGO_SECRET_KEY')
+    if not (
+        os.environ.get('DJANGO_SECRET_KEY')
+        or os.environ.get('SECRET_KEY')
+    ):
+        missing.append('DJANGO_SECRET_KEY ou SECRET_KEY')
+
     if not any(
         os.environ.get(name)
         for name in ('DATABASE_URL', 'POSTGRES_URL_NON_POOLING', 'POSTGRES_URL')

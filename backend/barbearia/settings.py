@@ -20,21 +20,51 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
 
-DEBUG = os.environ.get('DJANGO_DEBUG', '0' if os.environ.get('VERCEL') else '1') == '1'
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+
+def _env_value(environment, name, alias, default=None):
+    value = environment.get(name)
+    if value is None or not value.strip():
+        value = environment.get(alias)
+    if value is None or not value.strip():
+        return default
+    return value
+
+
+def _env_bool(environment, name, alias, default):
+    value = _env_value(environment, name, alias)
+    if value is None:
+        return default
+
+    normalized = value.strip().lower()
+    if normalized in ('1', 'true', 'yes', 'on'):
+        return True
+    if normalized in ('0', 'false', 'no', 'off'):
+        return False
+    raise ValueError(f'{name} deve ser true/false ou 1/0.')
+
+
+DEBUG = _env_bool(
+    os.environ,
+    'DJANGO_DEBUG',
+    'DEBUG',
+    default=not bool(os.environ.get('VERCEL')),
+)
+SECRET_KEY = _env_value(os.environ, 'DJANGO_SECRET_KEY', 'SECRET_KEY')
 if not SECRET_KEY:
     if not DEBUG:
-        raise ValueError('Configure DJANGO_SECRET_KEY no ambiente antes de iniciar em produção.')
+        raise ValueError('Configure DJANGO_SECRET_KEY ou SECRET_KEY antes de iniciar em produção.')
     SECRET_KEY = 'dev-only-change-before-production'
 
 
-def env_list(name, default):
-    return [value.strip() for value in os.environ.get(name, default).split(',') if value.strip()]
+def env_list(name, default, alias=None):
+    value = _env_value(os.environ, name, alias or name, default)
+    return [item.strip() for item in value.split(',') if item.strip()]
 
 
 ALLOWED_HOSTS = env_list(
     'DJANGO_ALLOWED_HOSTS',
     '127.0.0.1,localhost,beauty-barbershop-booking.vercel.app',
+    alias='ALLOWED_HOSTS',
 )
 vercel_hosts = []
 for vercel_host in (
@@ -141,7 +171,12 @@ def _database_config(environment=None):
         database['OPTIONS'] = options
         return database
 
-    debug = env.get('DJANGO_DEBUG', '0' if env.get('VERCEL') else '1') == '1'
+    debug = _env_bool(
+        env,
+        'DJANGO_DEBUG',
+        'DEBUG',
+        default=not bool(env.get('VERCEL')),
+    )
     if env.get('VERCEL') and not debug:
         raise ValueError('Configure DATABASE_URL com um PostgreSQL persistente no ambiente Vercel.')
 

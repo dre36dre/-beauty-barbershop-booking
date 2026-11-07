@@ -1,10 +1,36 @@
 from django.test import SimpleTestCase
 from unittest.mock import patch
 
-from .settings import BASE_DIR, _database_config
+from .settings import BASE_DIR, _database_config, _env_bool, _env_value, env_list
 
 
 class DatabaseConfigTests(SimpleTestCase):
+    def test_legacy_secret_key_name_is_supported(self):
+        self.assertEqual(
+            _env_value({'SECRET_KEY': 'legacy-secret'}, 'DJANGO_SECRET_KEY', 'SECRET_KEY'),
+            'legacy-secret',
+        )
+
+    def test_legacy_debug_false_value_is_parsed_as_false(self):
+        self.assertFalse(_env_bool({'DEBUG': 'False'}, 'DJANGO_DEBUG', 'DEBUG', True))
+
+    def test_legacy_allowed_hosts_name_is_supported(self):
+        with patch.dict('os.environ', {'ALLOWED_HOSTS': 'meu-projeto.vercel.app'}):
+            self.assertEqual(
+                env_list('DJANGO_ALLOWED_HOSTS', 'localhost', alias='ALLOWED_HOSTS'),
+                ['meu-projeto.vercel.app'],
+            )
+
+    def test_django_prefixed_values_take_precedence(self):
+        self.assertEqual(
+            _env_value(
+                {'DJANGO_SECRET_KEY': 'preferred', 'SECRET_KEY': 'legacy'},
+                'DJANGO_SECRET_KEY',
+                'SECRET_KEY',
+            ),
+            'preferred',
+        )
+
     def test_database_url_diagnostic_reports_presence_without_exposing_value(self):
         with patch.dict('os.environ', {'DATABASE_URL': 'postgresql://user:secret@db.example.com/barbearia'}):
             response = self.client.get('/teste/')
@@ -77,4 +103,4 @@ class DatabaseConfigTests(SimpleTestCase):
 
     def test_vercel_requires_a_persistent_postgresql_url(self):
         with self.assertRaises(ValueError):
-            _database_config({'VERCEL': '1', 'DJANGO_DEBUG': '0', 'DB_ENGINE': 'sqlite'})
+            _database_config({'VERCEL': '1', 'DEBUG': 'False', 'DB_ENGINE': 'sqlite'})
