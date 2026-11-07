@@ -58,7 +58,7 @@ SERVICOS = [
 ]
 
 def popular(apps, schema_editor):
-    Servicos = apps.get_model('servicos', 'Serviços')
+    Servicos = apps.get_model('servicos', 'Servicos')
     db = schema_editor.connection.alias
     for item in SERVICOS:
         Servicos.objects.using(db).update_or_create(
@@ -72,7 +72,7 @@ def popular(apps, schema_editor):
         )
 
 def remover(apps, schema_editor):
-    Servicos = apps.get_model('servicos', 'Serviços')
+    Servicos = apps.get_model('servicos', 'Servicos')
     db = schema_editor.connection.alias
     nomes = [item['nome'] for item in SERVICOS]
     Servicos.objects.using(db).filter(nome__in=nomes).delete()
