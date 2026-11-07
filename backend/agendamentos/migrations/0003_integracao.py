@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
             ('preco_contratado', models.DecimalField(decimal_places=2, max_digits=8)),
             ('duracao_contratada', models.PositiveIntegerField()),
             ('agendamento', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='itens_contratados', to='agendamentos.agendamento')),
-            ('servico', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='servicos.serviços')),
+            ('servico', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='servicos.servicos')),
         ], options={'constraints':[models.UniqueConstraint(fields=('agendamento','servico'),name='unique_servico_agendamento')]}),
-        migrations.AddField(model_name='agendamento', name='itens', field=models.ManyToManyField(blank=True, related_name='reservas', through='agendamentos.AgendamentoServico', to='servicos.serviços')),
+        migrations.AddField(model_name='agendamento', name='itens', field=models.ManyToManyField(blank=True, related_name='reservas', through='agendamentos.AgendamentoServico', to='servicos.servicos')),
     ]

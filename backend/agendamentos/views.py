@@ -14,7 +14,7 @@ from django.conf import settings
 from django.db import transaction
 from clientes.models import Cliente
 from barbeiros.models import Barbeiro
-from servicos.models import Serviços
+from servicos.models import Servicos
 from .models import Agendamento
 from .services import escolher_servicos, totais, periodos_livres, reservar
 
@@ -60,7 +60,7 @@ def resposta_servicos():
                 'duracao': service.duracao,
                 'descricao': service.descricao,
             }
-            for service in Serviços.objects.filter(ativo=True)
+            for service in Servicos.objects.filter(ativo=True)
         ],
     })
     response['Cache-Control'] = 'no-store'
@@ -75,11 +75,11 @@ def atualizar_servicos(request):
         data = corpo(request)
         services = data.get('servicos')
         if not isinstance(services, list):
-            raise ValidationError('Envie uma lista de serviços.')
+            raise ValidationError('Envie uma lista de servicos.')
 
         with transaction.atomic():
             active_services = {
-                service.pk: service for service in Serviços.objects.filter(ativo=True)
+                service.pk: service for service in Servicos.objects.filter(ativo=True)
             }
             retained_ids = set()
             updated_ids = set()
@@ -91,7 +91,7 @@ def atualizar_servicos(request):
                 name = item.get('nome')
                 description = item.get('descricao', '')
                 if not isinstance(name, str) or not name.strip():
-                    raise ValidationError('Informe o nome de todos os serviços.')
+                    raise ValidationError('Informe o nome de todos os servicos.')
                 if not isinstance(description, str):
                     raise ValidationError('A descrição do serviço precisa ser texto.')
 
@@ -114,7 +114,7 @@ def atualizar_servicos(request):
                     service = active_services.get(service_id)
 
                 if service is None:
-                    service = Serviços()
+                    service = Servicos()
                 service.nome = name.strip()
                 service.descricao = description.strip()
                 service.preco = price
@@ -124,7 +124,7 @@ def atualizar_servicos(request):
                 service.save()
                 retained_ids.add(service.pk)
 
-            Serviços.objects.filter(ativo=True).exclude(pk__in=retained_ids).update(ativo=False)
+            Servicos.objects.filter(ativo=True).exclude(pk__in=retained_ids).update(ativo=False)
 
         return resposta_servicos()
     except (ValidationError, InvalidOperation, ValueError, TypeError) as error:

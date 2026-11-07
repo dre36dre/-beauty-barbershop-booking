@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 from barbeiros.models import Barbeiro, HorarioTrabalho, Bloqueio
-from servicos.models import Serviços
+from servicos.models import Servicos
 from .models import Agendamento, AgendamentoServico
 
 PASSO_MINUTOS = 15
@@ -19,7 +19,7 @@ HORARIOS_FUNCIONAMENTO = {
 def escolher_servicos(ids):
     if not isinstance(ids, list) or not ids or len(ids) != len(set(map(str, ids))):
         raise ValidationError('Selecione serviços distintos.')
-    servicos = list(Serviços.objects.filter(id__in=ids, ativo=True))
+    servicos = list(Servicos.objects.filter(id__in=ids, ativo=True))
     if len(servicos) != len(ids):
         raise ValidationError('Há serviços inválidos ou inativos.')
     if any(s.duracao <= 0 for s in servicos):

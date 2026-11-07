@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from barbeiros.models import Barbeiro as Profissional
-from servicos.models import Serviços
+from servicos.models import Servicos
 from .models import Agendamento, AgendamentoServico, Barbeiro
 
 
@@ -22,7 +22,7 @@ class CalcularTotaisTests(TestCase):
 			data=date(2026, 11, 2),
 			horario=time(9, 0),
 		)
-		servico = Serviços.objects.create(
+		servico = Servicos.objects.create(
 			nome='Corte', preco=Decimal('45.00'), duracao=30
 		)
 		AgendamentoServico.objects.create(
@@ -63,7 +63,7 @@ class CsrfEndpointTests(TestCase):
 
 class ServiceManagementApiTests(TestCase):
 	def setUp(self):
-		self.service = Serviços.objects.create(
+		self.service = Servicos.objects.create(
 			nome='Corte', preco=Decimal('50.00'), duracao=45, descricao='Original'
 		)
 

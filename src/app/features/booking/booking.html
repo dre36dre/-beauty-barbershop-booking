@@ -25,7 +25,7 @@
           <span>Protocolo <strong>#{{ success.id }}</strong></span>
           <span>Data <strong>{{ selectedDate | date:'dd/MM/yyyy' }}</strong></span>
           <span>Horário <strong>{{ selectedTime }}</strong></span>
-          <div class="confirmed-services"><h2>Serviços e subtotais</h2>
+          <div class="confirmed-services"><h2>Servicos e subtotais</h2>
             @for (service of selectedServiceDetails; track service.id) {
               <div class="confirmed-service"><span>{{ service.nome }}</span><strong>{{ formatPrice(service.preco) }}</strong></div>
             }

@@ -49,7 +49,7 @@ class Agendamento(models.Model):
         related_name="agendamentos"
     )
 
-    itens = models.ManyToManyField('servicos.Serviços', through='AgendamentoServico', related_name='reservas', blank=True)
+    itens = models.ManyToManyField('servicos.Servicos', through='AgendamentoServico', related_name='reservas', blank=True)
     data = models.DateField()
     horario = models.TimeField()
 
@@ -92,7 +92,7 @@ class Agendamento(models.Model):
 
 class AgendamentoServico(models.Model):
     agendamento = models.ForeignKey(Agendamento, on_delete=models.CASCADE, related_name='itens_contratados')
-    servico = models.ForeignKey('servicos.Serviços', on_delete=models.PROTECT)
+    servico = models.ForeignKey('servicos.Servicos', on_delete=models.PROTECT)
     preco_contratado = models.DecimalField(max_digits=8, decimal_places=2)
     duracao_contratada = models.PositiveIntegerField()
 

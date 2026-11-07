@@ -5,7 +5,7 @@ def copiar(apps, schema_editor):
     AntigoServico = apps.get_model('agendamentos', 'Servico')
     Agendamento = apps.get_model('agendamentos', 'Agendamento')
     NovoBarbeiro = apps.get_model('barbeiros', 'Barbeiro')
-    NovoServico = apps.get_model('servicos', 'Serviços')
+    NovoServico = apps.get_model('servicos', 'Servicos')
     Item = apps.get_model('agendamentos', 'AgendamentoServico')
     db = schema_editor.connection.alias
     mapa_b = {}
