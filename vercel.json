@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then python backend/manage.py migrate; fi && npm run build",
+  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then uv run --no-project --python 3.12 --with-requirements requirements.txt -- python backend/manage.py migrate; fi && npm run build",
   "outputDirectory": "dist/beauty-barbershop-booking/browser",
   "rewrites": [
     { "source": "/teste", "destination": "/api/teste" },
