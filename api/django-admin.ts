@@ -30,5 +30,7 @@ export default withErrors(async (request) => {
   if (verifyAdmin(request)) {
     return new Response(null, { status: 303, headers: { Location: '/admin', 'Cache-Control': 'no-store' } });
   }
+
+  
   return loginPage();
 });
