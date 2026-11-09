@@ -1,4 +1,4 @@
-import { withErrors } from './_lib/core';
+import { withErrors } from './_lib/core.js';
 
 export default withErrors(async (request) => {
   if (request.method !== 'GET' && request.method !== 'POST') {

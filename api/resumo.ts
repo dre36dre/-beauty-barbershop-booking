@@ -1,4 +1,4 @@
-import { activeServices, json, numberList, readJson, withErrors } from './_lib/core';
+import { activeServices, json, numberList, readJson, withErrors } from './_lib/core.js';
 
 export default withErrors(async (request) => {
   if (request.method !== 'POST') return json({ erro: 'Método não permitido.' }, 405);

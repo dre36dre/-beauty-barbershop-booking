@@ -1,6 +1,6 @@
 import type { PoolClient } from 'pg';
-import { availableTimes } from './_lib/booking';
-import { activeServices, getDb, json, numberList, readJson, withErrors } from './_lib/core';
+import { availableTimes } from './_lib/booking.js';
+import { activeServices, getDb, json, numberList, readJson, withErrors } from './_lib/core.js';
 
 export default withErrors(async (request) => {
   if (request.method !== 'POST') return json({ erro: 'Método não permitido.' }, 405);

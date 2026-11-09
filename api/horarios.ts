@@ -1,5 +1,5 @@
-import { availableTimes } from './_lib/booking';
-import { json, numberList, withErrors } from './_lib/core';
+import { availableTimes } from './_lib/booking.js';
+import { json, numberList, withErrors } from './_lib/core.js';
 
 export default withErrors(async (request) => {
   if (request.method !== 'GET') return json({ erro: 'Método não permitido.' }, 405);

@@ -1,5 +1,4 @@
-import { createAdminCookie, sameOrigin, validAdminCredentials, withErrors } from './_lib/core';
-import { json } from './_lib/core';
+import { createAdminCookie, json, sameOrigin, validAdminCredentials, withErrors } from './_lib/core.js';
 
 function loginPage(message: string): Response {
   return new Response(`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Login administrativo</title><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#111;color:#f3eee6;font:16px system-ui"><main style="width:min(92vw,420px);padding:32px;border:1px solid #70582a;border-radius:14px;background:#1b1917"><h1 style="color:#dab054">Não foi possível entrar</h1><p>${message}</p><a style="color:#dab054" href="/django-admin/">Tentar novamente</a></main></body></html>`, {

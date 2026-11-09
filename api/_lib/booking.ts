@@ -1,5 +1,5 @@
 import type { Pool, PoolClient } from 'pg';
-import { activeServices, dateIsValid, getDb } from './core';
+import { activeServices, dateIsValid, getDb } from './core.js';
 
 type Executor = Pool | PoolClient;
 type TimeRange = { start: number; end: number };

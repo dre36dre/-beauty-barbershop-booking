@@ -1,4 +1,4 @@
-import { verifyAdmin, withErrors } from './_lib/core';
+import { verifyAdmin, withErrors } from './_lib/core.js';
 
 function loginPage(message = ''): Response {
   const alert = message
