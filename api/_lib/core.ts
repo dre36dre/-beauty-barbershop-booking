@@ -26,9 +26,12 @@ export function getDb(): Pool {
 }
 
 export function json(data: unknown, status = 200): Response {
-  return Response.json(data, {
+  return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Cache-Control': 'no-store' },
+    headers: {
+      'Cache-Control': 'no-store',
+      'Content-Type': 'application/json; charset=utf-8',
+    },
   });
 }
 
