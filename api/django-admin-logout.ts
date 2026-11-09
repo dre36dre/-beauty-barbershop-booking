@@ -4,7 +4,7 @@ export default withErrors(async (request) => {
   if (request.method !== 'GET' && request.method !== 'POST') {
     return new Response('Method Not Allowed', { status: 405 });
   }
-  const secure = process.env.VERCEL || new URL(request.url).protocol === 'https:' ? '; Secure' : '';
+  const secure = process.env['VERCEL'] || new URL(request.url).protocol === 'https:' ? '; Secure' : '';
   return new Response(null, {
     status: 303,
     headers: {

@@ -12,9 +12,9 @@ export default withErrors(async (request) => {
   if (request.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
   if (!sameOrigin(request)) return json({ erro: 'Origem da solicitação inválida.' }, 403);
 
-  const username = process.env.ADMIN_USERNAME;
-  const password = process.env.ADMIN_PASSWORD;
-  const sessionSecret = process.env.ADMIN_SESSION_SECRET || process.env.DJANGO_SECRET_KEY;
+  const username = process.env['ADMIN_USERNAME'];
+  const password = process.env['ADMIN_PASSWORD'];
+  const sessionSecret = process.env['ADMIN_SESSION_SECRET'] || process.env['DJANGO_SECRET_KEY'];
   if (!username || !password || !sessionSecret || sessionSecret.length < 32) {
     return loginPage('Configure ADMIN_USERNAME, ADMIN_PASSWORD e ADMIN_SESSION_SECRET (ou DJANGO_SECRET_KEY) nas variáveis Production da Vercel.');
   }

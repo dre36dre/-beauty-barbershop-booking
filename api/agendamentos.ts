@@ -7,11 +7,11 @@ export default withErrors(async (request) => {
   const body = await readJson(request);
   if (!body) return json({ erro: 'Envie um objeto JSON válido.' }, 400);
 
-  const clienteId = Number(body.cliente_id);
-  const professionalId = Number(body.profissional_id);
-  const date = body.data;
-  const time = typeof body.horario === 'string' ? body.horario : '';
-  const serviceIds = numberList(body.servicos);
+  const clienteId = Number(body['cliente_id']);
+  const professionalId = Number(body['profissional_id']);
+  const date = body['data'];
+  const time = typeof body['horario'] === 'string' ? body['horario'] : '';
+  const serviceIds = numberList(body['servicos']);
   if (!Number.isSafeInteger(clienteId) || clienteId <= 0
     || !Number.isSafeInteger(professionalId) || professionalId <= 0
     || typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)

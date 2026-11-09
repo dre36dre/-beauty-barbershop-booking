@@ -5,10 +5,10 @@ export default withErrors(async (request) => {
   const body = await readJson(request);
   if (!body) return json({ erro: 'Envie um objeto JSON válido.' }, 400);
 
-  const nome = typeof body.nome === 'string' ? body.nome.trim() : '';
-  const telefone = typeof body.telefone === 'string' ? body.telefone.trim() : '';
-  const endereco = typeof body.endereco === 'string' ? body.endereco.trim() : '';
-  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+  const nome = typeof body['nome'] === 'string' ? body['nome'].trim() : '';
+  const telefone = typeof body['telefone'] === 'string' ? body['telefone'].trim() : '';
+  const endereco = typeof body['endereco'] === 'string' ? body['endereco'].trim() : '';
+  const email = typeof body['email'] === 'string' ? body['email'].trim().toLowerCase() : '';
   if (!nome || !telefone || !endereco || !email) {
     return json({ erro: 'Preencha todos os campos.' }, 400);
   }

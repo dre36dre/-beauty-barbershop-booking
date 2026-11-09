@@ -4,9 +4,9 @@ import { Pool, type PoolClient } from 'pg';
 const globalDb = globalThis as typeof globalThis & { __beautyDbPool?: Pool };
 
 function databaseUrl(): string {
-  const url = process.env.DATABASE_URL
-    || process.env.POSTGRES_URL_NON_POOLING
-    || process.env.POSTGRES_URL;
+  const url = process.env['DATABASE_URL']
+    || process.env['POSTGRES_URL_NON_POOLING']
+    || process.env['POSTGRES_URL'];
   if (!url) throw new Error('Configure DATABASE_URL na Vercel.');
   return url;
 }
@@ -63,7 +63,7 @@ export function withErrors(
 }
 
 function secret(): string {
-  const value = process.env.ADMIN_SESSION_SECRET || process.env.DJANGO_SECRET_KEY;
+  const value = process.env['ADMIN_SESSION_SECRET'] || process.env['DJANGO_SECRET_KEY'];
   if (!value || value.length < 32) {
     throw new Error('Configure ADMIN_SESSION_SECRET com pelo menos 32 caracteres.');
   }
@@ -77,8 +77,8 @@ function equalSecret(left: string, right: string): boolean {
 }
 
 export function validAdminCredentials(username: string, password: string): boolean {
-  const expectedUsername = process.env.ADMIN_USERNAME;
-  const expectedPassword = process.env.ADMIN_PASSWORD;
+  const expectedUsername = process.env['ADMIN_USERNAME'];
+  const expectedPassword = process.env['ADMIN_PASSWORD'];
   return !!expectedUsername && !!expectedPassword
     && equalSecret(username, expectedUsername)
     && equalSecret(password, expectedPassword);
@@ -89,8 +89,8 @@ function sign(payload: string): string {
 }
 
 export function createAdminCookie(request: Request): string {
-  const username = process.env.ADMIN_USERNAME;
-  const password = process.env.ADMIN_PASSWORD;
+  const username = process.env['ADMIN_USERNAME'];
+  const password = process.env['ADMIN_PASSWORD'];
   if (!username || !password) {
     throw new Error('Configure ADMIN_USERNAME e ADMIN_PASSWORD na Vercel.');
   }
@@ -100,12 +100,12 @@ export function createAdminCookie(request: Request): string {
     exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
   })).toString('base64url');
   const token = `${payload}.${sign(payload)}`;
-  const secure = process.env.VERCEL || new URL(request.url).protocol === 'https:' ? '; Secure' : '';
+  const secure = process.env['VERCEL'] || new URL(request.url).protocol === 'https:' ? '; Secure' : '';
   return `admin_session=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=604800${secure}`;
 }
 
 export function verifyAdmin(request: Request): boolean {
-  const username = process.env.ADMIN_USERNAME;
+  const username = process.env['ADMIN_USERNAME'];
   if (!username) return false;
   const cookie = request.headers.get('cookie') || '';
   const token = cookie.split(';').map((part) => part.trim())

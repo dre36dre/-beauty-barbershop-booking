@@ -7,8 +7,8 @@ export default withErrors(async (request) => {
   if (!sameOrigin(request)) return json({ erro: 'Origem da solicitação inválida.' }, 403);
 
   const body = await readJson(request);
-  if (!Array.isArray(body?.servicos)) return json({ erro: 'Envie uma lista de serviços.' }, 400);
-  const services = body.servicos as Array<Record<string, unknown>>;
+  if (!Array.isArray(body?.['servicos'])) return json({ erro: 'Envie uma lista de serviços.' }, 400);
+  const services = body['servicos'] as Array<Record<string, unknown>>;
   const client = await getDb().connect();
   try {
     await client.query('BEGIN');
@@ -20,10 +20,10 @@ export default withErrors(async (request) => {
     const receivedIds = new Set<number>();
 
     for (const item of services) {
-      const nome = typeof item.nome === 'string' ? item.nome.trim() : '';
-      const descricao = typeof item.descricao === 'string' ? item.descricao.trim() : '';
-      const preco = String(item.preco ?? '');
-      const duracao = Number(item.duracao);
+      const nome = typeof item['nome'] === 'string' ? item['nome'].trim() : '';
+      const descricao = typeof item['descricao'] === 'string' ? item['descricao'].trim() : '';
+      const preco = String(item['preco'] ?? '');
+      const duracao = Number(item['duracao']);
       if (!nome || nome.length > 100 || !/^\d{1,6}(?:\.\d{1,2})?$/.test(preco)
         || !Number.isSafeInteger(duracao) || duracao <= 0) {
         await client.query('ROLLBACK');
@@ -31,8 +31,8 @@ export default withErrors(async (request) => {
       }
 
       let id: number | null = null;
-      if (item.id !== undefined && item.id !== null && item.id !== 0) {
-        id = Number(item.id);
+      if (item['id'] !== undefined && item['id'] !== null && item['id'] !== 0) {
+        id = Number(item['id']);
         if (!Number.isSafeInteger(id) || !activeIds.has(id) || receivedIds.has(id)) {
           await client.query('ROLLBACK');
           return json({ erro: 'Identificador de serviço inválido ou repetido.' }, 400);
