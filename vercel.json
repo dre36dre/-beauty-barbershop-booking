@@ -3,8 +3,6 @@
   "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then node scripts/migrate-db.mjs; fi && npm run build",
   "outputDirectory": "dist/beauty-barbershop-booking/browser",
   "rewrites": [
-    { "source": "/teste", "destination": "/api/teste" },
-    { "source": "/teste/", "destination": "/api/teste" },
     { "source": "/django-admin", "destination": "/api/django-admin" },
     { "source": "/django-admin/", "destination": "/api/django-admin" },
     { "source": "/django-admin/login/", "destination": "/api/django-admin-login" },
