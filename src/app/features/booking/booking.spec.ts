@@ -65,6 +65,40 @@ describe('Booking Component', () => {
     });
   });
 
+  it('should not mark fallback hours as available when the server returns no available hours', () => {
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne('/api/csrf/').flush({ ok: true });
+    http.expectOne('/api/servicos/').flush({ servicos: component.services });
+
+    component.selectedServices = [1];
+    component.selectedDate = '2099-12-01';
+    component.times = [];
+
+    expect(component.timeOptions.length).toBeGreaterThan(0);
+    expect(component.timeOptions.every((option) => !option.available)).toBe(true);
+  });
+
+  it('should refresh availability instead of submitting a time not returned by the server', () => {
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne('/api/csrf/').flush({ ok: true });
+    http.expectOne('/api/servicos/').flush({ servicos: component.services });
+
+    component.selectedServices = [1];
+    component.selectedDate = '2099-12-01';
+    component.selectedTime = '10:00';
+    component.times = [];
+    component.professionalsByTime = {};
+    component.submitBooking();
+
+    expect(component.selectedTime).toBe('');
+    expect(component.errorMessage).toContain('disponibilidade atual');
+    http.expectNone('/api/clientes/');
+    const availabilityRequest = http.expectOne(
+      (request) => request.url === '/api/profissionais/' && request.params.get('data') === '2099-12-01',
+    );
+    availabilityRequest.flush({ profissionais: [] });
+  });
+
   it('should update Seu resumo when selecting a service', () => {
     const firstService = component.services[0]; // Corte
     expect(component.selectedServiceDetails.length).toBe(0);
@@ -152,6 +186,8 @@ describe('Booking Component', () => {
     component.selectedServices = [1];
     component.selectedDate = '2099-12-01';
     component.selectedTime = '10:00';
+    component.times = ['10:00'];
+    component.professionalsByTime = { '10:00': [1] };
     component.submitBooking();
     fixture.detectChanges();
 
@@ -209,6 +245,8 @@ describe('Booking Component', () => {
     component.selectedServices = [1];
     component.selectedDate = '2099-12-01';
     component.selectedTime = '10:00';
+    component.times = ['10:00'];
+    component.professionalsByTime = { '10:00': [1] };
     component.submitBooking();
 
     expect(component.errorMessage).toBe('');
@@ -242,6 +280,8 @@ describe('Booking Component', () => {
     component.selectedServices = [1];
     component.selectedDate = '2099-12-01';
     component.selectedTime = '10:00';
+    component.times = ['10:00'];
+    component.professionalsByTime = { '10:00': [1] };
     component.submitBooking();
 
     expect(component.errorMessage).toBe('');
@@ -252,7 +292,11 @@ describe('Booking Component', () => {
     );
 
     expect(component.success).toBeNull();
-    expect(component.errorMessage.toLowerCase()).toContain('não foi possível salvar');
+    expect(component.errorMessage.toLowerCase()).toContain('agendamento não confirmado');
+    const availabilityRequest = http.expectOne(
+      (request) => request.url === '/api/profissionais/' && request.params.get('data') === '2099-12-01',
+    );
+    availabilityRequest.flush({ profissionais: [] });
     expect(TestBed.inject(AppointmentStore).all().some((appointment) => appointment.nome === 'Cliente sem confirmação')).toBe(false);
   });
 });

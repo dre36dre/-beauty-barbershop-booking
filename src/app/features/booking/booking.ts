@@ -162,7 +162,9 @@ export class Booking implements OnInit {
 
       const isBooked = !this.backendAvailable && this.isTimeBooked(this.selectedDate, time);
       const isBlocked = this.isTimeBlocked(this.selectedDate, time);
-      const isAvailableInTimes = this.times.length === 0 || this.times.includes(time);
+      const isAvailableInTimes = this.backendAvailable
+        ? this.times.includes(time)
+        : this.times.length === 0 || this.times.includes(time);
       const available = !isBooked && !isBlocked && isAvailableInTimes;
 
       options.push({ time, available });
@@ -223,6 +225,7 @@ export class Booking implements OnInit {
     this.availabilityRequest++;
     this.timesRequest++;
     this.loadingOptions = false;
+    this.selectedTime = '';
     this.selectedServices = next;
     const selected = this.selectedServiceDetails;
     this.summary = selected.length ? {
@@ -344,6 +347,17 @@ export class Booking implements OnInit {
       return;
     }
 
+    if (this.backendAvailable && (
+      !this.times.includes(this.selectedTime)
+      || !this.professionalsByTime[this.selectedTime]?.includes(Number(this.selectedProfessional))
+    )) {
+      this.selectedTime = '';
+      this.errorMessage = 'Este horário não está na disponibilidade atual. Consulte os horários e selecione novamente.';
+      this.loadAvailableTimes();
+      this.cdr.markForCheck();
+      return;
+    }
+
     if (this.isTimeBlocked(this.selectedDate, this.selectedTime)) {
       const block = this.appointmentStore.getBlockForDateTime(this.selectedDate, this.selectedTime);
       const motivo = block?.motivo ? ` (${block.motivo})` : '';
@@ -435,6 +449,10 @@ export class Booking implements OnInit {
           const serverMessage = error instanceof HttpErrorResponse
             ? error.error?.erro
             : null;
+          if (error instanceof HttpErrorResponse && error.status === 409) {
+            this.selectedTime = '';
+            this.loadAvailableTimes();
+          }
           this.errorMessage = error instanceof Error && error.name === 'TimeoutError'
             ? 'O servidor demorou para responder. Verifique se a reserva foi registrada antes de tentar novamente.'
             : typeof serverMessage === 'string'
