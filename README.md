@@ -12,31 +12,21 @@ ng serve
 
 Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
-## Booking API
+## Backend and database
 
-The `/agendar` page uses the Django API. Install the root dependencies, copy `backend\.env.exemplo` to `backend\.env`, apply migrations, then start Django on `http://localhost:8000` and run the Angular development server in a second terminal. The local example uses SQLite by default, so no separate database server is required. `proxy.conf.json` forwards local `/api` requests to Django.
+The booking API is implemented as TypeScript functions in `api/` and connects to PostgreSQL with `pg`. It uses the existing Neon/Django tables, so the Node migration keeps current client, service, and appointment data intact. `database/schema.sql` creates the compatible schema for a new database; `scripts/migrate-db.mjs` applies it and seeds only missing default records. Production deployments run this idempotent migration before the Angular build.
 
-If the API is unavailable, the booking page can save a request in the current browser as a local-only entry. It is not confirmed by the salon, is not shared with other devices, and is not saved to the server; use the WhatsApp button to check availability with the administrator.
+For local development, install Node dependencies with `npm install` and use `vercel dev` from a linked project. Configure `DATABASE_URL` with the Neon connection string. Do not commit `.env` files or share database credentials.
 
-The Vercel configuration in `vercel.json` serves Angular and routes API requests to the Python functions in `api/`, which invoke the Django application in `backend/`. The Django source is included in this repository, so Vercel does not need to fetch a separate submodule. Vercel installs Python dependencies from the root `requirements.txt`. Before deploying, connect a persistent PostgreSQL database to the Vercel project and set `DATABASE_URL` (or `POSTGRES_URL`), a private `DJANGO_SECRET_KEY` (or `SECRET_KEY`), `DEBUG=False`, and `DJANGO_ALLOWED_HOSTS` (or `ALLOWED_HOSTS`) in the Production environment. The Django-prefixed names take precedence if both variants are present. Each Production deployment applies Django database migrations before building the frontend, so Production environment variables must be available to the build. Create a Django staff user after the initial deployment. The service catalog and bookings are shared through that database. Sign in at `/django-admin/` before saving service changes in the Angular admin panel; the `/admin` path remains the Angular dashboard.
+In Vercel Production, set:
 
-Temporary deployment diagnostic: visit `/teste` to check whether `DATABASE_URL` is present in the Django runtime. The response exposes only a boolean; remove this endpoint after the deployment check.
+- `DATABASE_URL`: the Neon PostgreSQL connection string.
+- `ADMIN_USERNAME` and `ADMIN_PASSWORD`: credentials for the protected admin panel.
+- `ADMIN_SESSION_SECRET`: a random secret of at least 32 characters. The existing `DJANGO_SECRET_KEY` is also accepted as a fallback during migration.
 
-On Windows, install Python and the backend dependencies with `py -m pip install -r requirements.txt`. For local development, create the ignored configuration file and choose a database with `DB_ENGINE` in `backend\.env` (`postgresql`, `mysql`, or `sqlite`):
+Customer bookings are public and are written to PostgreSQL. The `/admin` dashboard reads shared appointments from that database; sign in at `/django-admin/` on each device, then open `/admin` and refresh the appointment list. Each browser/device has its own admin session.
 
-```powershell
-Copy-Item backend\.env.exemplo backend\.env
-py backend\manage.py migrate
-py backend\manage.py runserver 8000
-```
-
-For Vercel, configure `DATABASE_URL` (or `POSTGRES_URL`) and `DJANGO_SECRET_KEY` in the Production environment, then link the repository with the Vercel CLI. Production migrations run automatically during deployment. To create a staff account after the first successful deployment, run:
-
-```powershell
-npx vercel env run -e production -- py backend\manage.py createsuperuser
-```
-
-Never commit environment files or share database credentials.
+The API endpoints are `/api/servicos/`, `/api/clientes/`, `/api/profissionais/`, `/api/horarios/`, `/api/resumo/`, `/api/agendamentos/`, and `/api/admin/agendamentos/`. Admin appointment and service management routes require the Node admin session.
 
 ## Code scaffolding
 

@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then env -u PYTHONPATH uv run --no-project --python 3.12 --with-requirements requirements.txt -- python backend/manage.py migrate; fi && npm run build",
+  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then node scripts/migrate-db.mjs; fi && npm run build",
   "outputDirectory": "dist/beauty-barbershop-booking/browser",
   "rewrites": [
     { "source": "/teste", "destination": "/api/teste" },
@@ -8,6 +8,7 @@
     { "source": "/django-admin", "destination": "/api/django-admin" },
     { "source": "/django-admin/", "destination": "/api/django-admin" },
     { "source": "/django-admin/login/", "destination": "/api/django-admin-login" },
+    { "source": "/django-admin/logout/", "destination": "/api/django-admin-logout" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

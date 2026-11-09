@@ -160,11 +160,11 @@ export class Admin implements OnInit, OnDestroy {
   }
 
   private servicesErrorMessage(error: unknown): string {
-    if (error instanceof HttpErrorResponse && error.status === 403) {
-      return 'Acesso negado. Entre no Django Admin com uma conta administrativa e tente novamente.';
+    if (error instanceof HttpErrorResponse && (error.status === 401 || error.status === 403)) {
+      return 'Acesso negado. Entre com a conta administrativa e tente novamente.';
     }
     if (error instanceof HttpErrorResponse && error.status === 200) {
-      return 'A API respondeu HTTP 200, mas não retornou JSON. No Vercel, publique o Django em um servidor de API e configure api-base-url no src/index.html com a URL pública desse backend.';
+      return 'A API respondeu sem JSON válido. Confira as funções TypeScript e a conexão PostgreSQL na Vercel.';
     }
     if (error instanceof HttpErrorResponse && error.status === 0) {
       return 'Não foi possível conectar ao servidor. As alterações não foram salvas.';
@@ -374,7 +374,7 @@ export class Admin implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       },
       error: (error: unknown) => {
-        this.appointmentSyncMessage = error instanceof HttpErrorResponse && error.status === 403
+        this.appointmentSyncMessage = error instanceof HttpErrorResponse && (error.status === 401 || error.status === 403)
           ? 'Entre com uma conta administradora para consultar os agendamentos compartilhados.'
           : 'Não foi possível carregar os agendamentos do servidor. Os dados locais não são considerados confirmados.';
         this.refreshingAppointments = false;
