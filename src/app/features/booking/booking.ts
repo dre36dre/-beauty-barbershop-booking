@@ -463,9 +463,11 @@ export class Booking implements OnInit {
     const request = ++this.availabilityRequest;
     const timesRequest = ++this.timesRequest;
     this.loadingOptions = true;
+    this.times = [];
+    this.professionalsByTime = {};
 
     this.api.getProfessionals(this.selectedDate, this.selectedServices).pipe(
-      timeout(2000),
+      timeout(8000),
       switchMap((response) => {
         this.professionals = response.profissionais;
         if (!response.profissionais.length) return of([] as Array<{ id: number; horarios: string[] }>);
@@ -473,7 +475,7 @@ export class Booking implements OnInit {
           this.selectedDate,
           professional.id,
           this.selectedServices,
-        ).pipe(timeout(2000), map((result) => ({ id: professional.id, horarios: result.horarios })))));
+        ).pipe(timeout(8000), map((result) => ({ id: professional.id, horarios: result.horarios })))));
       }),
     ).subscribe({
       next: (availability) => {
@@ -498,6 +500,14 @@ export class Booking implements OnInit {
       error: () => {
         if (request !== this.availabilityRequest || timesRequest !== this.timesRequest) return;
         this.loadingOptions = false;
+        if (this.backendAvailable) {
+          this.professionals = [];
+          this.times = [];
+          this.professionalsByTime = {};
+          this.errorMessage = 'Não foi possível consultar a agenda do servidor. Atualize a página e tente novamente.';
+          this.cdr.markForCheck();
+          return;
+        }
         this.setupFallbackTimes();
       },
     });

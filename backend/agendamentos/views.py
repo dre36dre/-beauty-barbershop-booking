@@ -226,7 +226,9 @@ def confirmar(request):
             send_mail('Agendamento confirmado', f'Olá, {cliente.nome}! Seu agendamento foi confirmado para {agenda.data:%d/%m/%Y} às {agenda.horario:%H:%M}. Total: R$ {agenda.valor_total}.', settings.DEFAULT_FROM_EMAIL,[cliente.email],fail_silently=True)
         transaction.on_commit(enviar)
         return JsonResponse({'id':agenda.pk,'status':agenda.status,'valor_total':str(agenda.valor_total),'duracao_total':agenda.duracao_total},status=201)
-    except (Cliente.DoesNotExist,Barbeiro.DoesNotExist):
-        return erro('Cliente ou profissional não encontrado.',404)
+    except Cliente.DoesNotExist:
+        return erro('Os dados do cliente não foram encontrados. Preencha novamente seus dados.',404)
+    except Barbeiro.DoesNotExist:
+        return erro('O profissional selecionado não está cadastrado ou ativo. Atualize a página e escolha outro horário.',404)
     except (KeyError,ValueError,TypeError,ValidationError,IntegrityError) as e:
         return erro(e)
