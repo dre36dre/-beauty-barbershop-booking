@@ -109,7 +109,7 @@ export class Booking implements OnInit {
   selectedProfessional = '1';
   selectedTime = '';
   summary: BookingSummary | null = null;
-  client = { nome: '', telefone: '', anotacao: '', email: '', endereco: '' };
+  client = { nome: '', telefone: '', anotacao: '', endereco: '' };
   minimumDate = this.localDateString(new Date());
   loadingServices = false;
   loadingOptions = false;
@@ -418,7 +418,6 @@ export class Booking implements OnInit {
       nome: this.client.nome,
       telefone: this.client.telefone,
       endereco: clientNote || 'Sem anotações',
-      email: this.client.email,
       anotacao: clientNote,
     }).pipe(
         timeout(15000),

@@ -3,9 +3,11 @@ CREATE TABLE IF NOT EXISTS clientes_cliente (
   nome VARCHAR(100) NOT NULL,
   telefone VARCHAR(20) NOT NULL,
   "endereço" VARCHAR(255) NOT NULL,
-  email VARCHAR(254) NOT NULL UNIQUE,
+  email VARCHAR(254) UNIQUE,
   cpf VARCHAR(11) UNIQUE
 );
+
+ALTER TABLE clientes_cliente ALTER COLUMN email DROP NOT NULL;
 
 CREATE TABLE IF NOT EXISTS barbeiros_barbeiro (
   id BIGSERIAL PRIMARY KEY,

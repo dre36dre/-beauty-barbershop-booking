@@ -65,6 +65,12 @@ describe('Booking Component', () => {
     });
   });
 
+  it('should not ask for an email address in the client details form', () => {
+    expect(fixture.nativeElement.querySelector('input[name="email"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('input[name="nome"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('input[name="telefone"]')).not.toBeNull();
+  });
+
   it('should not mark fallback hours as available when the server returns no available hours', () => {
     const http = TestBed.inject(HttpTestingController);
     http.expectOne('/api/csrf/').flush({ ok: true });
@@ -180,7 +186,6 @@ describe('Booking Component', () => {
       nome: 'Cliente local',
       telefone: '11999999999',
       anotacao: '',
-      email: 'cliente@example.com',
       endereco: '',
     };
     component.selectedServices = [1];
@@ -239,7 +244,6 @@ describe('Booking Component', () => {
       nome: 'Cliente de teste',
       telefone: '11999999999',
       anotacao: '',
-      email: 'cliente@example.com',
       endereco: '',
     };
     component.selectedServices = [1];
@@ -252,7 +256,9 @@ describe('Booking Component', () => {
     expect(component.errorMessage).toBe('');
     expect(component.success).toBeNull();
     expect(component.submitting).toBe(true);
-    http.expectOne('/api/clientes/').flush({ id: 21, nome: 'Cliente de teste' });
+    const clientRequest = http.expectOne('/api/clientes/');
+    expect(clientRequest.request.body).not.toHaveProperty('email');
+    clientRequest.flush({ id: 21, nome: 'Cliente de teste' });
     http.expectOne('/api/agendamentos/').flush({
       id: 45,
       status: 'agendado',
@@ -274,7 +280,6 @@ describe('Booking Component', () => {
       nome: 'Cliente sem confirmação',
       telefone: '11999999999',
       anotacao: '',
-      email: 'cliente@example.com',
       endereco: '',
     };
     component.selectedServices = [1];

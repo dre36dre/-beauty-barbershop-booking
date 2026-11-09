@@ -8,13 +8,13 @@ export default withErrors(async (request) => {
   const nome = typeof body['nome'] === 'string' ? body['nome'].trim() : '';
   const telefone = typeof body['telefone'] === 'string' ? body['telefone'].trim() : '';
   const endereco = typeof body['endereco'] === 'string' ? body['endereco'].trim() : '';
-  const email = typeof body['email'] === 'string' ? body['email'].trim().toLowerCase() : '';
-  if (!nome || !telefone || !endereco || !email) {
+  const email = typeof body['email'] === 'string' ? body['email'].trim().toLowerCase() : null;
+  if (!nome || !telefone || !endereco) {
     return json({ erro: 'Preencha todos os campos.' }, 400);
   }
-  if (nome.length > 100 || telefone.length > 20 || endereco.length > 255 || email.length > 254
-    || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return json({ erro: 'Confira nome, telefone, endereço e e-mail.' }, 400);
+  if (nome.length > 100 || telefone.length > 20 || endereco.length > 255
+    || (email !== null && (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)))) {
+    return json({ erro: 'Confira nome, telefone e endereço.' }, 400);
   }
 
   const result = await getDb().query<{ id: number; nome: string }>(
