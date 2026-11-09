@@ -19,6 +19,7 @@ def criar_profissional_padrao(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
+        ('barbeiros', '0001_initial'),
         ('agendamentos', '0004_importar_legado'),
     ]
 
