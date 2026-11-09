@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { forkJoin, map, of, switchMap, timeout } from 'rxjs';
@@ -171,8 +172,8 @@ export class Booking implements OnInit {
 
   ngOnInit(): void {
     this.api.initializeCsrf().pipe(
-      timeout(1500),
-      switchMap(() => this.api.getServices().pipe(timeout(1500))),
+      timeout(8000),
+      switchMap(() => this.api.getServices().pipe(timeout(8000))),
     ).subscribe({
       next: ({ servicos }) => {
         this.backendAvailable = true;
@@ -404,8 +405,8 @@ export class Booking implements OnInit {
       email: this.client.email,
       anotacao: clientNote,
     }).pipe(
-        timeout(3000),
-        switchMap((createdClient) => this.api.createBooking({ ...booking, cliente_id: createdClient.id }).pipe(timeout(3000))),
+        timeout(15000),
+        switchMap((createdClient) => this.api.createBooking({ ...booking, cliente_id: createdClient.id }).pipe(timeout(15000))),
       ).subscribe({
         next: (createdBooking) => {
           if (!createdBooking?.id) {
@@ -429,9 +430,14 @@ export class Booking implements OnInit {
           this.cdr.markForCheck();
         },
         error: (error: unknown) => {
+          const serverMessage = error instanceof HttpErrorResponse
+            ? error.error?.erro
+            : null;
           this.errorMessage = error instanceof Error && error.name === 'TimeoutError'
-            ? 'O servidor demorou para responder. Verifique a conexão e tente novamente.'
-            : 'Não foi possível salvar o agendamento no servidor. Nenhuma reserva foi confirmada.';
+            ? 'O servidor demorou para responder. Verifique se a reserva foi registrada antes de tentar novamente.'
+            : typeof serverMessage === 'string'
+              ? `Agendamento não confirmado: ${serverMessage}`
+              : 'Não foi possível salvar o agendamento no servidor. Confira os dados e tente novamente.';
           this.submitting = false;
           this.cdr.markForCheck();
         },

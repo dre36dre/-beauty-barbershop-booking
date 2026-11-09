@@ -168,8 +168,13 @@ def cadastrar_cliente(request):
         email=str(d.get('email','')).strip().lower()
         if not all([nome,telefone,endereco,email]):
             return erro('Preencha todos os campos.')
-        cliente=Cliente(nome=nome, telefone=telefone, email=email)
-        setattr(cliente, 'endereço', endereco)
+        cliente, _ = Cliente.objects.get_or_create(
+            email=email,
+            defaults={'nome': nome, 'telefone': telefone, 'endereço': endereco},
+        )
+        cliente.nome = nome
+        cliente.telefone = telefone
+        cliente.endereço = endereco
         cliente.full_clean()
         cliente.save()
         return JsonResponse({'id':cliente.pk,'nome':cliente.nome}, status=201)
@@ -218,7 +223,7 @@ def confirmar(request):
         dia=parse_data(d.get('data'))
         agenda=reservar(cliente,int(d['profissional_id']),dia,str(d['horario']),d.get('servicos',[]))
         def enviar():
-            send_mail('Agendamento confirmado', f'Olá, {cliente.nome}! Seu agendamento foi confirmado para {agenda.data:%d/%m/%Y} às {agenda.horario:%H:%M}. Total: R$ {agenda.valor_total}.', settings.DEFAULT_FROM_EMAIL,[cliente.email],fail_silently=False)
+            send_mail('Agendamento confirmado', f'Olá, {cliente.nome}! Seu agendamento foi confirmado para {agenda.data:%d/%m/%Y} às {agenda.horario:%H:%M}. Total: R$ {agenda.valor_total}.', settings.DEFAULT_FROM_EMAIL,[cliente.email],fail_silently=True)
         transaction.on_commit(enviar)
         return JsonResponse({'id':agenda.pk,'status':agenda.status,'valor_total':str(agenda.valor_total),'duracao_total':agenda.duracao_total},status=201)
     except (Cliente.DoesNotExist,Barbeiro.DoesNotExist):
