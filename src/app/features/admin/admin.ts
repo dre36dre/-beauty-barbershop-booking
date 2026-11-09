@@ -66,6 +66,7 @@ export class Admin implements OnInit, OnDestroy {
   servicesFeedback = '';
   savingServices = false;
   appointmentSyncMessage = '';
+  refreshingAppointments = false;
 
   openServicesModal(): void {
     this.editingServices = this.salonServices().map((s) => ({ ...s }));
@@ -327,7 +328,7 @@ export class Admin implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.updateClock();
-    this.api.getServices().pipe(timeout(5000)).subscribe({
+    this.api.getServices().pipe(timeout(15000)).subscribe({
       next: ({ servicos }) => {
         this.store.replaceServicesFromServer(servicos);
         this.servicesFeedback = '';
@@ -338,19 +339,7 @@ export class Admin implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       },
     });
-    this.api.getAdminAppointments().pipe(timeout(5000)).subscribe({
-      next: ({ agendamentos }) => {
-        this.store.replaceAppointmentsFromServer(agendamentos);
-        this.appointmentSyncMessage = '';
-        this.cdr.markForCheck();
-      },
-      error: (error: unknown) => {
-        this.appointmentSyncMessage = error instanceof HttpErrorResponse && error.status === 403
-          ? 'Entre com uma conta administradora para consultar os agendamentos compartilhados.'
-          : 'Não foi possível carregar os agendamentos do servidor. Os dados locais não são considerados confirmados.';
-        this.cdr.markForCheck();
-      },
-    });
+    this.refreshAppointments();
     this.timerId = setInterval(() => {
       this.updateClock();
       this.cdr.markForCheck();
@@ -369,8 +358,29 @@ export class Admin implements OnInit, OnDestroy {
     this.activeTab = tab;
     if (tab === 'agendamentos') {
       this.rebuildCalendar();
+      this.refreshAppointments();
     }
     this.cdr.markForCheck();
+  }
+
+  refreshAppointments(): void {
+    if (this.refreshingAppointments) return;
+    this.refreshingAppointments = true;
+    this.api.getAdminAppointments().pipe(timeout(15000)).subscribe({
+      next: ({ agendamentos }) => {
+        this.store.replaceAppointmentsFromServer(agendamentos);
+        this.appointmentSyncMessage = '';
+        this.refreshingAppointments = false;
+        this.cdr.markForCheck();
+      },
+      error: (error: unknown) => {
+        this.appointmentSyncMessage = error instanceof HttpErrorResponse && error.status === 403
+          ? 'Entre com uma conta administradora para consultar os agendamentos compartilhados.'
+          : 'Não foi possível carregar os agendamentos do servidor. Os dados locais não são considerados confirmados.';
+        this.refreshingAppointments = false;
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   get totalServicos(): number {

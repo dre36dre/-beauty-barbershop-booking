@@ -470,7 +470,12 @@
     <!-- ============================================== -->
     @if (activeTab === 'agendamentos') {
       <section class="page-body">
-        <h2 class="view-title script-title">Agendamentos</h2>
+        <div class="view-header-row">
+          <h2 class="view-title script-title">Agendamentos</h2>
+          <button type="button" class="pill-btn" [disabled]="refreshingAppointments" (click)="refreshAppointments()">
+            {{ refreshingAppointments ? 'Atualizando…' : 'Atualizar lista' }}
+          </button>
+        </div>
 
         <!-- Calendário em Card Branco / Claro -->
         <div class="calendar-container-card">

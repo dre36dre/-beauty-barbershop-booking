@@ -172,8 +172,8 @@ export class Booking implements OnInit {
 
   ngOnInit(): void {
     this.api.initializeCsrf().pipe(
-      timeout(8000),
-      switchMap(() => this.api.getServices().pipe(timeout(8000))),
+      timeout(20000),
+      switchMap(() => this.api.getServices().pipe(timeout(20000))),
     ).subscribe({
       next: ({ servicos }) => {
         this.backendAvailable = true;
@@ -182,8 +182,9 @@ export class Booking implements OnInit {
         this.cdr.markForCheck();
       },
       error: () => {
-        // Backend offline: modo autônomo ativo
+        // Agenda local serve apenas para consulta; reservas exigem o servidor.
         this.backendAvailable = false;
+        this.errorMessage = 'Não foi possível conectar ao servidor. O agendamento só pode ser confirmado quando a conexão estiver disponível.';
         this.cdr.markForCheck();
       },
     });
@@ -376,25 +377,26 @@ export class Booking implements OnInit {
     this.cdr.markForCheck();
 
     if (!this.backendAvailable) {
-      const localAppointment = this.appointmentStore.add({
-        nome: clientName,
-        horario: this.selectedTime,
-        servico: servicoNomes,
-        valor: this.selectedSubtotal,
-        data: this.selectedDate,
-        observacoes: clientNote,
-      }, 'cliente');
-      this.success = {
-        id: localAppointment.id,
-        status: 'local',
-        valor_total: this.selectedSubtotal.toFixed(2),
-        duracao_total: this.selectedServiceDetails.reduce(
-          (total, service) => total + service.duracao,
-          0,
-        ),
-      };
-      this.submitting = false;
-      this.cdr.markForCheck();
+      this.api.initializeCsrf().pipe(
+        timeout(20000),
+        switchMap(() => this.api.getServices().pipe(timeout(20000))),
+      ).subscribe({
+        next: ({ servicos }) => {
+          this.backendAvailable = true;
+          this.services = servicos;
+          this.appointmentStore.replaceServicesFromServer(servicos);
+          this.selectedTime = '';
+          this.errorMessage = 'Conexão restabelecida. Confira a disponibilidade atualizada e selecione o horário novamente.';
+          this.loadAvailableTimes();
+          this.submitting = false;
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.errorMessage = 'Não foi possível conectar ao servidor. Nenhum agendamento foi enviado; tente novamente quando a conexão voltar.';
+          this.submitting = false;
+          this.cdr.markForCheck();
+        },
+      });
       return;
     }
 
@@ -467,7 +469,7 @@ export class Booking implements OnInit {
     this.professionalsByTime = {};
 
     this.api.getProfessionals(this.selectedDate, this.selectedServices).pipe(
-      timeout(8000),
+      timeout(15000),
       switchMap((response) => {
         this.professionals = response.profissionais;
         if (!response.profissionais.length) return of([] as Array<{ id: number; horarios: string[] }>);
@@ -475,7 +477,7 @@ export class Booking implements OnInit {
           this.selectedDate,
           professional.id,
           this.selectedServices,
-        ).pipe(timeout(8000), map((result) => ({ id: professional.id, horarios: result.horarios })))));
+        ).pipe(timeout(15000), map((result) => ({ id: professional.id, horarios: result.horarios })))));
       }),
     ).subscribe({
       next: (availability) => {
