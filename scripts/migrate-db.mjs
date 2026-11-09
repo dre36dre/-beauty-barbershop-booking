@@ -36,8 +36,10 @@ try {
   for (const [nome, preco, duracao, descricao] of defaultServices) {
     await client.query(
       `INSERT INTO servicos_servicos (nome, preco, duracao, descricao, ativo)
-       SELECT $1, $2, $3, $4, TRUE
-        WHERE NOT EXISTS (SELECT 1 FROM servicos_servicos WHERE nome = $1)`,
+       SELECT $1::varchar, $2::numeric, $3::integer, $4::text, TRUE
+        WHERE NOT EXISTS (
+          SELECT 1 FROM servicos_servicos WHERE nome = $1::varchar
+        )`,
       [nome, preco, duracao, descricao],
     );
   }
