@@ -11,7 +11,9 @@ import {
   BlockedSlot,
   DEFAULT_SALON_SERVICES,
 } from '../../core/appointment-store';
-import { BookingApi, SalonService } from '../../core/booking-api';
+import { BookingApi, SalonService, ServerAppointment } from '../../core/booking-api';
+
+const KNOWN_SERVER_APPOINTMENTS_KEY = 'vsn_known_server_appointments';
 
 export interface TodayAppointment {
   id: number;
@@ -263,6 +265,8 @@ export class Admin implements OnInit, OnDestroy {
   readonly unreadAlertsCount = this.store.unreadAlertsCount;
   readonly activeToast = this.store.activeToast;
   showNotificationsPanel = false;
+  private knownServerAppointmentIds = this.loadKnownServerAppointmentIds();
+  private appointmentPollingId?: ReturnType<typeof setInterval>;
 
   toggleNotificationsPanel(): void {
     this.showNotificationsPanel = !this.showNotificationsPanel;
@@ -344,6 +348,7 @@ export class Admin implements OnInit, OnDestroy {
       this.updateClock();
       this.cdr.markForCheck();
     }, 1000);
+    this.startAppointmentPolling();
 
     this.buildCalendar();
   }
@@ -351,6 +356,9 @@ export class Admin implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.timerId) {
       clearInterval(this.timerId);
+    }
+    if (this.appointmentPollingId) {
+      clearInterval(this.appointmentPollingId);
     }
   }
 
@@ -368,6 +376,7 @@ export class Admin implements OnInit, OnDestroy {
     this.refreshingAppointments = true;
     this.api.getAdminAppointments().pipe(timeout(15000)).subscribe({
       next: ({ agendamentos }) => {
+        this.notifyNewServerAppointments(agendamentos);
         this.store.replaceAppointmentsFromServer(agendamentos);
         this.appointmentSyncMessage = '';
         this.refreshingAppointments = false;
@@ -381,6 +390,71 @@ export class Admin implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       },
     });
+  }
+
+  private startAppointmentPolling(): void {
+    if (this.appointmentPollingId) return;
+    this.appointmentPollingId = setInterval(() => this.refreshAppointments(), 30_000);
+  }
+
+  private notifyNewServerAppointments(appointments: ServerAppointment[]): void {
+    const knownIds = this.knownServerAppointmentIds;
+    for (const appointment of appointments) {
+      if (knownIds?.has(appointment.id)) continue;
+
+      if (knownIds) {
+        const data = this.store.formatDateBR(appointment.data);
+        const alert: AdminAlert = {
+          id: `server-appointment-${appointment.id}`,
+          tipo: 'novo_agendamento',
+          titulo: 'Novo Agendamento de Cliente!',
+          mensagem: `${appointment.nome} agendou ${appointment.servico} para ${data} às ${appointment.horario}.`,
+          clienteNome: appointment.nome,
+          servico: appointment.servico,
+          data,
+          horario: appointment.horario,
+          valor: appointment.valor,
+          criadoEm: new Date().toISOString(),
+          lido: false,
+        };
+        this.store.pushAlert(alert);
+      }
+
+      knownIds?.add(appointment.id);
+    }
+
+    if (this.knownServerAppointmentIds === null) {
+      this.knownServerAppointmentIds = new Set(appointments.map(({ id }) => id));
+    }
+    this.saveKnownServerAppointmentIds();
+  }
+
+  private loadKnownServerAppointmentIds(): Set<number> | null {
+    try {
+      const raw = typeof localStorage !== 'undefined'
+        ? localStorage.getItem(KNOWN_SERVER_APPOINTMENTS_KEY)
+        : null;
+      if (!raw) return null;
+      const ids: unknown = JSON.parse(raw);
+      return Array.isArray(ids) && ids.every((id) => Number.isSafeInteger(id) && id > 0)
+        ? new Set(ids)
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private saveKnownServerAppointmentIds(): void {
+    try {
+      if (typeof localStorage !== 'undefined' && this.knownServerAppointmentIds) {
+        localStorage.setItem(
+          KNOWN_SERVER_APPOINTMENTS_KEY,
+          JSON.stringify([...this.knownServerAppointmentIds]),
+        );
+      }
+    } catch {
+      // Local storage is optional; polling still detects new bookings while the page is open.
+    }
   }
 
   get totalServicos(): number {

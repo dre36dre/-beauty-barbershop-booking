@@ -12,6 +12,7 @@ describe('Admin Component', () => {
   let http: HttpTestingController;
 
   beforeEach(async () => {
+    localStorage.removeItem('vsn_known_server_appointments');
     await TestBed.configureTestingModule({
       imports: [Admin],
       providers: [
@@ -210,6 +211,33 @@ describe('Admin Component', () => {
     // Fechar toast
     component.dismissToast();
     expect(component.activeToast()).toBeNull();
+  });
+
+  it('should notify the admin when a new appointment appears on the server', () => {
+    const newAppointment = {
+      id: 987654,
+      nome: 'Cliente do celular',
+      horario: '14:30',
+      servico: 'Corte',
+      valor: 50,
+      data: '2099-12-01',
+    };
+    const initialUnread = component.unreadAlertsCount();
+
+    component.refreshAppointments();
+    http.expectOne('/api/admin/agendamentos/').flush({
+      agendamentos: [...store.all(), newAppointment],
+    });
+
+    expect(component.unreadAlertsCount()).toBe(initialUnread + 1);
+    expect(component.activeToast()?.clienteNome).toBe('Cliente do celular');
+    expect(store.alerts()[0].id).toBe('server-appointment-987654');
+
+    component.refreshAppointments();
+    http.expectOne('/api/admin/agendamentos/').flush({
+      agendamentos: [...store.all()],
+    });
+    expect(component.unreadAlertsCount()).toBe(initialUnread + 1);
   });
 
   it('should toggle notifications panel and mark all alerts as read', () => {
