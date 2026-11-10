@@ -13,9 +13,24 @@ describe('availableTimes', () => {
 
     expect(times?.[0]).toBe('10:45');
     expect(times).toContain('17:15');
-    expect(times).not.toContain('17:30');
+    expect(times).toContain('17:30');
+    expect(times).toContain('18:00');
+    expect(times).not.toContain('18:15');
     expect(query).toHaveBeenCalledTimes(3);
     expect(query.mock.calls.some(([sql]) => String(sql).includes('barbeiros_horariotrabalho'))).toBe(false);
     expect(query.mock.calls.some(([sql]) => String(sql).includes('barbeiros_bloqueio'))).toBe(false);
+  });
+
+  it('makes the closing-time start available on days open until 18:30', async () => {
+    const query = vi.fn()
+      .mockResolvedValueOnce({ rows: [{ id: 1, nome: 'Vanessa Souza', duracao: 90 }] })
+      .mockResolvedValueOnce({ rowCount: 1, rows: [{ id: 1 }] })
+      .mockResolvedValueOnce({ rows: [] });
+    const executor = { query } as never;
+
+    const times = await availableTimes('2099-12-02', 1, [1], executor);
+
+    expect(times).toContain('18:30');
+    expect(times).not.toContain('18:45');
   });
 });

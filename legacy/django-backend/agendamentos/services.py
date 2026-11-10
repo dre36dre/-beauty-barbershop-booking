@@ -47,7 +47,7 @@ def periodos_livres(barbeiro, dia, duracao):
     inicio = timezone.make_aware(datetime.combine(dia, abre), timezone.get_current_timezone())
     fim = timezone.make_aware(datetime.combine(dia, fecha), timezone.get_current_timezone())
     atual = inicio
-    while atual + timedelta(minutes=duracao) <= fim:
+    while atual <= fim:
         final = atual + timedelta(minutes=duracao)
         if atual > agora and all(not (atual < e and final > s) for s,e in ocupados):
             horarios.add(atual.strftime('%H:%M'))
