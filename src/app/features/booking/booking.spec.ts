@@ -114,6 +114,30 @@ describe('Booking Component', () => {
     expect(component.times).toEqual(['10:00', '11:00']);
   });
 
+  it('should trust server availability instead of stale local blocked slots', () => {
+    const http = TestBed.inject(HttpTestingController);
+    const store = TestBed.inject(AppointmentStore);
+    const date = '2099-12-01';
+    store.addBlock({ tipo: 'dia', data: date, motivo: 'Bloqueio local antigo' });
+    store.addBlock({ tipo: 'hora', data: date, horario: '10:00', motivo: 'Bloqueio local antigo' });
+
+    http.expectOne('/api/csrf/').flush({ ok: true });
+    http.expectOne('/api/servicos/').flush({ servicos: component.services });
+    component.selectedServices = [1];
+    component.selectedDate = date;
+    component.refreshAvailability();
+
+    http.expectOne(
+      (request) => request.url === '/api/profissionais/' && request.params.get('data') === date,
+    ).flush({ profissionais: [{ id: 1, nome: 'Vanessa Souza' }] });
+    http.expectOne(
+      (request) => request.url === '/api/horarios/' && request.params.get('data') === date,
+    ).flush({ horarios: ['10:00', '10:15'] });
+
+    expect(component.timeOptions.find((option) => option.time === '10:00')?.available).toBe(true);
+    expect(component.timeOptions.find((option) => option.time === '10:15')?.available).toBe(true);
+  });
+
   it('should not ask for an email address in the client details form', () => {
     expect(fixture.nativeElement.querySelector('input[name="email"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('input[name="nome"]')).not.toBeNull();
