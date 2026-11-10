@@ -81,20 +81,6 @@ export async function availableTimes(
     return { start, end: start + Number(row.duracao_total) };
   });
 
-  const blocks = await executor.query<{ start_min: number; end_min: number }>(
-    `WITH bounds AS (
-       SELECT $2::date::timestamp AT TIME ZONE 'America/Sao_Paulo' AS start_at,
-              ($2::date + 1)::timestamp AT TIME ZONE 'America/Sao_Paulo' AS end_at
-     )
-     SELECT GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (GREATEST(b.data_inicio, bounds.start_at) - bounds.start_at)) / 60))::int AS start_min,
-            LEAST(1440, CEIL(EXTRACT(EPOCH FROM (LEAST(b.data_fim, bounds.end_at) - bounds.start_at)) / 60))::int AS end_min
-       FROM barbeiros_bloqueio b CROSS JOIN bounds
-      WHERE b.barbeiro_id = $1 AND b.ativo = TRUE
-        AND b.data_inicio < bounds.end_at AND b.data_fim > bounds.start_at`,
-    [professionalId, date],
-  );
-  occupied.push(...blocks.rows.map((block) => ({ start: block.start_min, end: block.end_min })));
-
   const times = new Set<string>();
   for (let start = opening.start; start + duration <= opening.end; start += 15) {
     if (date === now.date && start <= now.minutes) continue;

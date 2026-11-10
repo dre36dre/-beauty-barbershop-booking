@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
-from barbeiros.models import Barbeiro, Bloqueio
+from barbeiros.models import Barbeiro
 from servicos.models import Servicos
 from .models import Agendamento, AgendamentoServico
 
@@ -42,10 +42,6 @@ def periodos_livres(barbeiro, dia, duracao):
         if a.duracao_total:
             inicio = timezone.make_aware(datetime.combine(dia, a.horario), timezone.get_current_timezone())
             ocupados.append((inicio, inicio + timedelta(minutes=a.duracao_total)))
-    inicio_dia = timezone.make_aware(datetime.combine(dia, datetime.min.time()), timezone.get_current_timezone())
-    fim_dia = inicio_dia + timedelta(days=1)
-    for b in Bloqueio.objects.filter(barbeiro=barbeiro, ativo=True, data_inicio__lt=fim_dia, data_fim__gt=inicio_dia):
-        ocupados.append((b.data_inicio, b.data_fim))
     agora = timezone.now()
     horarios = set()
     inicio = timezone.make_aware(datetime.combine(dia, abre), timezone.get_current_timezone())
