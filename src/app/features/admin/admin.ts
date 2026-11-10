@@ -194,6 +194,17 @@ export class Admin implements OnInit, OnDestroy {
     return this.store.today().slice().sort((a, b) => a.horario.localeCompare(b.horario));
   }
 
+  get cancelableAppointments(): AppointmentEntry[] {
+    const today = this.store.todayDate();
+    return this.store.all()
+      .filter((appointment) => this.store.normalizeDate(appointment.data) >= today)
+      .slice()
+      .sort((a, b) =>
+        this.store.normalizeDate(a.data).localeCompare(this.store.normalizeDate(b.data))
+        || a.horario.localeCompare(b.horario),
+      );
+  }
+
   // Lista de Clientes (Imagem 2) com suporte a persistência local
   clients: ClientRecord[] = this.loadClientsFromStorage();
 
@@ -268,6 +279,8 @@ export class Admin implements OnInit, OnDestroy {
   showNotificationsPanel = false;
   private knownServerAppointmentIds = this.loadKnownServerAppointmentIds();
   private appointmentPollingId?: ReturnType<typeof setInterval>;
+  readonly cancellingAppointmentIds = new Set<number>();
+  appointmentCancelFeedback = '';
 
   toggleNotificationsPanel(): void {
     this.showNotificationsPanel = !this.showNotificationsPanel;
@@ -549,6 +562,7 @@ export class Admin implements OnInit, OnDestroy {
   }
 
   openCancelAppointmentModal(): void {
+    this.appointmentCancelFeedback = '';
     this.showCancelAppointmentModal = true;
     this.cdr.markForCheck();
   }
@@ -559,8 +573,36 @@ export class Admin implements OnInit, OnDestroy {
   }
 
   removeAppointment(id: number): void {
-    this.store.remove(id);
-    this.cdr.markForCheck();
+    if (this.cancellingAppointmentIds.has(id)) return;
+    this.appointmentCancelFeedback = '';
+
+    if (!this.knownServerAppointmentIds?.has(id)) {
+      this.store.remove(id);
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.cancellingAppointmentIds.add(id);
+    this.api.cancelAdminAppointment(id).pipe(timeout(15000)).subscribe({
+      next: () => {
+        this.store.remove(id);
+        this.knownServerAppointmentIds?.delete(id);
+        this.saveKnownServerAppointmentIds();
+        this.cancellingAppointmentIds.delete(id);
+        this.cdr.markForCheck();
+      },
+      error: (error: unknown) => {
+        const detail = error instanceof HttpErrorResponse
+          && typeof error.error?.erro === 'string'
+          ? error.error.erro
+          : null;
+        this.appointmentCancelFeedback = detail
+          ? `Não foi possível cancelar o agendamento. ${detail}`
+          : 'Não foi possível cancelar o agendamento no servidor. Tente novamente.';
+        this.cancellingAppointmentIds.delete(id);
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   get todayDate(): string {

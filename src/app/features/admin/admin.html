@@ -664,21 +664,31 @@
         <button type="button" class="close-btn" (click)="closeCancelAppointmentModal()">✕</button>
       </div>
       <div class="modal-body">
-        <p class="modal-instruction">Selecione o agendamento que deseja cancelar:</p>
+        <p class="modal-instruction">Selecione um agendamento futuro que deseja cancelar:</p>
+        @if (appointmentCancelFeedback) {
+          <div class="feedback-banner-modal" role="alert">{{ appointmentCancelFeedback }}</div>
+        }
         <div class="cancel-list">
-          @for (item of todayAppointments; track item.id) {
+          @for (item of cancelableAppointments; track item.id) {
             <div class="cancel-item">
-              <div>
+              <div class="cancel-item-info">
                 <strong>{{ item.horario }} - {{ item.nome }}</strong>
-                <small>{{ item.servico }} ({{ formatCurrency(item.valor) }})</small>
+                <small>{{ formatDateBR(item.data) }} · {{ item.servico }} ({{ formatCurrency(item.valor) }})</small>
+                @if (item.observacoes) {
+                  <small>Anotação: {{ item.observacoes }}</small>
+                }
               </div>
-              <button type="button" class="btn-danger" (click)="removeAppointment(item.id)">
-                Cancelar
+              <button
+                type="button"
+                class="btn-danger"
+                [disabled]="cancellingAppointmentIds.has(item.id)"
+                (click)="removeAppointment(item.id)">
+                {{ cancellingAppointmentIds.has(item.id) ? 'Cancelando…' : 'Cancelar' }}
               </button>
             </div>
           }
-          @if (!todayAppointments.length) {
-            <p class="empty-note">Não há agendamentos para cancelar hoje.</p>
+          @if (!cancelableAppointments.length) {
+            <p class="empty-note">Não há agendamentos futuros para cancelar.</p>
           }
         </div>
       </div>

@@ -71,6 +71,10 @@ export class BookingApi {
     );
   }
 
+  cancelAdminAppointment(id: number): Observable<{ id: number; status: string }> {
+    return this.post<{ id: number; status: string }>('/admin/agendamentos/', { id });
+  }
+
   updateServices(services: SalonService[]): Observable<{ servicos: SalonService[] }> {
     return this.post<{ servicos: SalonService[] }>('/servicos/atualizar/', { servicos: services });
   }

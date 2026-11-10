@@ -94,9 +94,54 @@ describe('Admin Component', () => {
     expect(component.todayAppointments.some((a) => a.nome === 'Camila Ferreira')).toBe(true);
   });
 
-  it('should cancel/remove an appointment via store', () => {
+  it('should show appointments from today and later dates in the cancellation modal', () => {
+    const futureAppointment = {
+      id: 765432,
+      nome: 'Cliente de outra data',
+      horario: '14:00',
+      servico: 'Escova',
+      valor: 45,
+      data: '2099-12-01',
+    };
+    store.replaceAppointmentsFromServer([
+      ...store.all(),
+      { ...futureAppointment, data: '2099-11-30' },
+      futureAppointment,
+    ]);
+
+    component.openCancelAppointmentModal();
+    fixture.detectChanges();
+
+    const nativeElement = fixture.nativeElement as HTMLElement;
+    const items = Array.from(nativeElement.querySelectorAll('.cancel-item'))
+      .map((item) => item.textContent ?? '');
+    expect(items.some((item) => item.includes('30/11/2099'))).toBe(true);
+    expect(items.some((item) => item.includes('01/12/2099'))).toBe(true);
+    expect(items.findIndex((item) => item.includes('30/11/2099')))
+      .toBeLessThan(items.findIndex((item) => item.includes('01/12/2099')));
+  });
+
+  it('should cancel server appointments persistently', () => {
     const first = component.todayAppointments[0];
+    component.refreshAppointments();
+    http.expectOne('/api/admin/agendamentos/').flush({
+      agendamentos: [{
+        id: first.id,
+        nome: first.nome,
+        horario: first.horario,
+        servico: first.servico,
+        valor: first.valor,
+        data: first.data,
+        criado_em: new Date().toISOString(),
+        observacoes: '',
+      }],
+    });
+
     component.removeAppointment(first.id);
+    const cancelRequest = http.expectOne('/api/admin/agendamentos/');
+    expect(cancelRequest.request.method).toBe('POST');
+    expect(cancelRequest.request.body).toEqual({ id: first.id });
+    cancelRequest.flush({ id: first.id, status: 'cancelado' });
 
     expect(component.todayAppointments.some((a) => a.id === first.id)).toBe(false);
   });
