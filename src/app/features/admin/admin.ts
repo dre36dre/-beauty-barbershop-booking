@@ -14,6 +14,7 @@ import {
 import { BookingApi, SalonService, ServerAppointment } from '../../core/booking-api';
 
 const KNOWN_SERVER_APPOINTMENTS_KEY = 'vsn_known_server_appointments';
+const RECENT_APPOINTMENT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export interface TodayAppointment {
   id: number;
@@ -402,7 +403,19 @@ export class Admin implements OnInit, OnDestroy {
     for (const appointment of appointments) {
       if (knownIds?.has(appointment.id)) continue;
 
-      if (knownIds) {
+      const createdAt = Date.parse(appointment.criado_em);
+      const isRecentOnInitialSync = knownIds === null
+        && Number.isFinite(createdAt)
+        && Date.now() - createdAt <= RECENT_APPOINTMENT_WINDOW_MS
+        && createdAt <= Date.now();
+      const alreadyAlertedLocally = this.store.all().some((localAppointment) =>
+        localAppointment.id === appointment.id
+        && localAppointment.nome === appointment.nome
+        && localAppointment.data === appointment.data
+        && localAppointment.horario === appointment.horario,
+      );
+
+      if ((knownIds !== null || isRecentOnInitialSync) && !alreadyAlertedLocally) {
         const data = this.store.formatDateBR(appointment.data);
         const alert: AdminAlert = {
           id: `server-appointment-${appointment.id}`,
@@ -420,7 +433,7 @@ export class Admin implements OnInit, OnDestroy {
         this.store.pushAlert(alert);
       }
 
-      knownIds?.add(appointment.id);
+      this.knownServerAppointmentIds?.add(appointment.id);
     }
 
     if (this.knownServerAppointmentIds === null) {

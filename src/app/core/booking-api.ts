@@ -40,6 +40,7 @@ export interface ServerAppointment {
   servico: string;
   valor: number;
   data: string;
+  criado_em: string;
 }
 
 @Injectable({ providedIn: 'root' })

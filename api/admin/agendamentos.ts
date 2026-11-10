@@ -9,7 +9,8 @@ export default withErrors(async (request) => {
     `SELECT a.id::int4 AS id, a.cliente_nome AS nome,
             to_char(a.horario, 'HH24:MI') AS horario,
             COALESCE(string_agg(s.nome, ' + ' ORDER BY i.id), '') AS servico,
-            a.valor_total::float8 AS valor, a.data::text AS data
+            a.valor_total::float8 AS valor, a.data::text AS data,
+            a.criado_em::text AS criado_em
        FROM agendamentos_agendamento a
        LEFT JOIN agendamentos_agendamentoservico i ON i.agendamento_id = a.id
        LEFT JOIN servicos_servicos s ON s.id = i.servico_id

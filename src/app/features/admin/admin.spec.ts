@@ -221,6 +221,7 @@ describe('Admin Component', () => {
       servico: 'Corte',
       valor: 50,
       data: '2099-12-01',
+      criado_em: new Date().toISOString(),
     };
     const initialUnread = component.unreadAlertsCount();
 
@@ -238,6 +239,30 @@ describe('Admin Component', () => {
       agendamentos: [...store.all()],
     });
     expect(component.unreadAlertsCount()).toBe(initialUnread + 1);
+  });
+
+  it('should notify about a recent server booking on the first sync from a new device', () => {
+    localStorage.removeItem('vsn_known_server_appointments');
+    const newDeviceFixture = TestBed.createComponent(Admin);
+    newDeviceFixture.detectChanges();
+
+    http.expectOne('/api/servicos/').flush({ servicos: store.services() });
+    http.expectOne('/api/admin/agendamentos/').flush({
+      agendamentos: [{
+        id: 987655,
+        nome: 'Cliente em outro dispositivo',
+        horario: '15:00',
+        servico: 'Escova',
+        valor: 45,
+        data: '2099-12-01',
+        criado_em: new Date().toISOString(),
+      }],
+    });
+
+    expect(newDeviceFixture.componentInstance.activeToast()?.clienteNome)
+      .toBe('Cliente em outro dispositivo');
+    expect(newDeviceFixture.componentInstance.unreadAlertsCount()).toBeGreaterThan(0);
+    newDeviceFixture.destroy();
   });
 
   it('should toggle notifications panel and mark all alerts as read', () => {
