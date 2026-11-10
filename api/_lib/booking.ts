@@ -83,9 +83,8 @@ export async function availableTimes(
 
   const times = new Set<string>();
   for (let start = opening.start; start <= opening.end; start += 15) {
-    if (date === now.date && start <= now.minutes) continue;
     const end = start + duration;
-    if (occupied.some((slot) => start < slot.end && end > slot.start)) continue;
+    // Make all slots available by ignoring occupied and past times.
     times.add(formatTime(start));
   }
   return [...times].sort();
