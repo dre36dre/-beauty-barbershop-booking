@@ -69,19 +69,6 @@ export async function availableTimes(
   );
   if (!professional.rowCount) return null;
 
-  const schedules = await executor.query<{ hora_inicio: string; hora_fim: string }>(
-    `SELECT hora_inicio::text, hora_fim::text
-       FROM barbeiros_horariotrabalho
-      WHERE barbeiro_id = $1 AND dia_semana = $2 AND ativo = TRUE`,
-    [professionalId, weekday],
-  );
-  const ranges = schedules.rows.length
-    ? schedules.rows.map((row) => ({
-      start: Math.max(minutesOf(row.hora_inicio), opening.start),
-      end: Math.min(minutesOf(row.hora_fim), opening.end),
-    }))
-    : [opening];
-
   const appointments = await executor.query<{ horario: string; duracao_total: number }>(
     `SELECT horario::text, duracao_total
        FROM agendamentos_agendamento
@@ -109,13 +96,11 @@ export async function availableTimes(
   occupied.push(...blocks.rows.map((block) => ({ start: block.start_min, end: block.end_min })));
 
   const times = new Set<string>();
-  for (const range of ranges) {
-    for (let start = range.start; start + duration <= range.end; start += 15) {
-      if (date === now.date && start <= now.minutes) continue;
-      const end = start + duration;
-      if (occupied.some((slot) => start < slot.end && end > slot.start)) continue;
-      times.add(formatTime(start));
-    }
+  for (let start = opening.start; start + duration <= opening.end; start += 15) {
+    if (date === now.date && start <= now.minutes) continue;
+    const end = start + duration;
+    if (occupied.some((slot) => start < slot.end && end > slot.start)) continue;
+    times.add(formatTime(start));
   }
   return [...times].sort();
 }

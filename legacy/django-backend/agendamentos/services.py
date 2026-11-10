@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
-from barbeiros.models import Barbeiro, HorarioTrabalho, Bloqueio
+from barbeiros.models import Barbeiro, Bloqueio
 from servicos.models import Servicos
 from .models import Agendamento, AgendamentoServico
 
@@ -37,10 +37,6 @@ def periodos_livres(barbeiro, dia, duracao):
         return []
 
     abre, fecha = horario_abertura
-    jornada = list(HorarioTrabalho.objects.filter(barbeiro=barbeiro, dia_semana=dia.weekday(), ativo=True))
-    # Se a equipe ainda não cadastrou jornadas no admin, considere o horário
-    # público do salão como jornada padrão para esse profissional.
-    faixas = [(faixa.hora_inicio, faixa.hora_fim) for faixa in jornada] or [(abre, fecha)]
     ocupados = []
     for a in Agendamento.objects.filter(profissional=barbeiro, data=dia, status='agendado'):
         if a.duracao_total:
@@ -52,19 +48,14 @@ def periodos_livres(barbeiro, dia, duracao):
         ocupados.append((b.data_inicio, b.data_fim))
     agora = timezone.now()
     horarios = set()
-    for hora_inicio, hora_fim in faixas:
-        inicio_faixa = max(hora_inicio, abre)
-        fim_faixa = min(hora_fim, fecha)
-        if inicio_faixa >= fim_faixa:
-            continue
-        inicio = timezone.make_aware(datetime.combine(dia, inicio_faixa), timezone.get_current_timezone())
-        fim = timezone.make_aware(datetime.combine(dia, fim_faixa), timezone.get_current_timezone())
-        atual = inicio
-        while atual + timedelta(minutes=duracao) <= fim:
-            final = atual + timedelta(minutes=duracao)
-            if atual > agora and all(not (atual < e and final > s) for s,e in ocupados):
-                horarios.add(atual.strftime('%H:%M'))
-            atual += timedelta(minutes=PASSO_MINUTOS)
+    inicio = timezone.make_aware(datetime.combine(dia, abre), timezone.get_current_timezone())
+    fim = timezone.make_aware(datetime.combine(dia, fecha), timezone.get_current_timezone())
+    atual = inicio
+    while atual + timedelta(minutes=duracao) <= fim:
+        final = atual + timedelta(minutes=duracao)
+        if atual > agora and all(not (atual < e and final > s) for s,e in ocupados):
+            horarios.add(atual.strftime('%H:%M'))
+        atual += timedelta(minutes=PASSO_MINUTOS)
     return sorted(horarios)
 
 @transaction.atomic
