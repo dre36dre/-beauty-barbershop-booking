@@ -65,6 +65,55 @@ describe('Booking Component', () => {
     });
   });
 
+  it('should load availability selected before server initialization completes', () => {
+    const http = TestBed.inject(HttpTestingController);
+    component.selectedServices = [1];
+    component.selectedDate = '2099-12-01';
+
+    http.expectOne('/api/csrf/').flush({ ok: true });
+    http.expectOne('/api/servicos/').flush({ servicos: component.services });
+
+    const professionalsRequest = http.expectOne(
+      (request) => request.url === '/api/profissionais/' && request.params.get('data') === '2099-12-01',
+    );
+    professionalsRequest.flush({ profissionais: [{ id: 1, nome: 'Vanessa Souza' }] });
+    const timesRequest = http.expectOne(
+      (request) => request.url === '/api/horarios/' && request.params.get('data') === '2099-12-01',
+    );
+    timesRequest.flush({ horarios: ['10:00'] });
+
+    expect(component.times).toEqual(['10:00']);
+    expect(component.timeOptions.find((option) => option.time === '10:00')?.available).toBe(true);
+  });
+
+  it('should refresh availability when requested after a server cancellation', () => {
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne('/api/csrf/').flush({ ok: true });
+    http.expectOne('/api/servicos/').flush({ servicos: component.services });
+    component.selectedServices = [1];
+    component.selectedDate = '2099-12-01';
+
+    component.refreshAvailability();
+    const professionalsRequest = http.expectOne(
+      (request) => request.url === '/api/profissionais/' && request.params.get('data') === '2099-12-01',
+    );
+    professionalsRequest.flush({ profissionais: [{ id: 1, nome: 'Vanessa Souza' }] });
+    http.expectOne(
+      (request) => request.url === '/api/horarios/' && request.params.get('data') === '2099-12-01',
+    ).flush({ horarios: ['10:00'] });
+    expect(component.times).toEqual(['10:00']);
+
+    component.refreshAvailability();
+    http.expectOne(
+      (request) => request.url === '/api/profissionais/' && request.params.get('data') === '2099-12-01',
+    ).flush({ profissionais: [{ id: 1, nome: 'Vanessa Souza' }] });
+    http.expectOne(
+      (request) => request.url === '/api/horarios/' && request.params.get('data') === '2099-12-01',
+    ).flush({ horarios: ['10:00', '11:00'] });
+
+    expect(component.times).toEqual(['10:00', '11:00']);
+  });
+
   it('should not ask for an email address in the client details form', () => {
     expect(fixture.nativeElement.querySelector('input[name="email"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('input[name="nome"]')).not.toBeNull();

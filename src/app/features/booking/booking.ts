@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -13,12 +13,13 @@ import { AppointmentStore, AppointmentEntry } from '../../core/appointment-store
   templateUrl: './booking.html',
   styleUrl: './booking.css',
 })
-export class Booking implements OnInit {
+export class Booking implements OnInit, OnDestroy {
   private readonly api = inject(BookingApi);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly appointmentStore = inject(AppointmentStore);
   private availabilityRequest = 0;
   private timesRequest = 0;
+  private availabilityPollingId?: ReturnType<typeof setInterval>;
   private backendAvailable = false;
 
   readonly defaultServices: SalonService[] = [
@@ -181,6 +182,7 @@ export class Booking implements OnInit {
         this.backendAvailable = true;
         this.services = servicos;
         this.appointmentStore.replaceServicesFromServer(servicos);
+        this.loadAvailableTimes();
         this.cdr.markForCheck();
       },
       error: () => {
@@ -190,6 +192,29 @@ export class Booking implements OnInit {
         this.cdr.markForCheck();
       },
     });
+    this.availabilityPollingId = setInterval(() => {
+      if (document.visibilityState === 'visible') this.refreshAvailability();
+    }, 30_000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.availabilityPollingId) clearInterval(this.availabilityPollingId);
+  }
+
+  @HostListener('document:visibilitychange')
+  onVisibilityChange(): void {
+    if (document.visibilityState === 'visible') this.refreshAvailability();
+  }
+
+  refreshAvailability(): void {
+    if (
+      !this.backendAvailable
+      || !this.selectedDate
+      || !this.selectedServices.length
+      || this.loadingOptions
+      || this.submitting
+    ) return;
+    this.loadAvailableTimes();
   }
 
   isSelected(id: number): boolean {
