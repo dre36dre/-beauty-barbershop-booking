@@ -385,6 +385,7 @@ export class Booking implements OnInit {
       data: this.selectedDate,
       horario: this.selectedTime,
       servicos: [...this.selectedServices],
+      observacoes: clientNote,
     };
 
     this.submitting = true;

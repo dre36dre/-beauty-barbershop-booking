@@ -348,6 +348,14 @@
   color: #ffffff;
 }
 
+.appointment-note {
+  display: block;
+  margin-top: 4px;
+  color: #dab054;
+  font-size: 11px;
+  font-weight: 400;
+}
+
 .text-center {
   text-align: center;
 }

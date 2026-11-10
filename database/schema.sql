@@ -67,9 +67,13 @@ CREATE TABLE IF NOT EXISTS agendamentos_agendamento (
   horario TIME NOT NULL,
   valor_total NUMERIC(8,2) NOT NULL DEFAULT 0,
   duracao_total INTEGER NOT NULL DEFAULT 0,
+  observacoes VARCHAR(255) NOT NULL DEFAULT '',
   criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   status VARCHAR(20) NOT NULL DEFAULT 'agendado'
 );
+
+ALTER TABLE agendamentos_agendamento
+  ADD COLUMN IF NOT EXISTS observacoes VARCHAR(255) NOT NULL DEFAULT '';
 
 CREATE TABLE IF NOT EXISTS agendamentos_agendamento_servicos (
   id BIGSERIAL PRIMARY KEY,

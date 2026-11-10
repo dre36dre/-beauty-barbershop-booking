@@ -296,7 +296,12 @@
                     <tr>
                       <td class="font-medium">{{ item.nome }}</td>
                       <td>{{ item.horario }}</td>
-                      <td>{{ item.servico }}</td>
+                      <td>
+                        {{ item.servico }}
+                        @if (item.observacoes) {
+                          <small class="appointment-note">Anotação: {{ item.observacoes }}</small>
+                        }
+                      </td>
                     </tr>
                   }
                 </tbody>

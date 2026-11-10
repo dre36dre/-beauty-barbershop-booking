@@ -421,7 +421,7 @@ export class Admin implements OnInit, OnDestroy {
           id: `server-appointment-${appointment.id}`,
           tipo: 'novo_agendamento',
           titulo: 'Novo Agendamento de Cliente!',
-          mensagem: `${appointment.nome} agendou ${appointment.servico} para ${data} às ${appointment.horario}.`,
+          mensagem: `${appointment.nome} agendou ${appointment.servico} para ${data} às ${appointment.horario}.${appointment.observacoes ? ` Obs: "${appointment.observacoes}".` : ''}`,
           clienteNome: appointment.nome,
           servico: appointment.servico,
           data,
@@ -429,6 +429,7 @@ export class Admin implements OnInit, OnDestroy {
           valor: appointment.valor,
           criadoEm: new Date().toISOString(),
           lido: false,
+          observacoes: appointment.observacoes,
         };
         this.store.pushAlert(alert);
       }

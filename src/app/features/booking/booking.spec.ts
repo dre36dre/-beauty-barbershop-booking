@@ -243,7 +243,7 @@ describe('Booking Component', () => {
     component.client = {
       nome: 'Cliente de teste',
       telefone: '11999999999',
-      anotacao: '',
+      anotacao: 'Prefere corte em camadas',
       endereco: '',
     };
     component.selectedServices = [1];
@@ -259,7 +259,9 @@ describe('Booking Component', () => {
     const clientRequest = http.expectOne('/api/clientes/');
     expect(clientRequest.request.body).not.toHaveProperty('email');
     clientRequest.flush({ id: 21, nome: 'Cliente de teste' });
-    http.expectOne('/api/agendamentos/').flush({
+    const bookingRequest = http.expectOne('/api/agendamentos/');
+    expect(bookingRequest.request.body.observacoes).toBe('Prefere corte em camadas');
+    bookingRequest.flush({
       id: 45,
       status: 'agendado',
       valor_total: '50.00',

@@ -222,6 +222,7 @@ describe('Admin Component', () => {
       valor: 50,
       data: '2099-12-01',
       criado_em: new Date().toISOString(),
+      observacoes: 'Prefere corte em camadas',
     };
     const initialUnread = component.unreadAlertsCount();
 
@@ -232,6 +233,10 @@ describe('Admin Component', () => {
 
     expect(component.unreadAlertsCount()).toBe(initialUnread + 1);
     expect(component.activeToast()?.clienteNome).toBe('Cliente do celular');
+    expect(component.activeToast()?.observacoes).toBe('Prefere corte em camadas');
+    expect(store.all().find(({ id }) => id === newAppointment.id)?.observacoes)
+      .toBe('Prefere corte em camadas');
+    expect(store.alerts()[0].mensagem).toContain('Prefere corte em camadas');
     expect(store.alerts()[0].id).toBe('server-appointment-987654');
 
     component.refreshAppointments();
@@ -256,6 +261,7 @@ describe('Admin Component', () => {
         valor: 45,
         data: '2099-12-01',
         criado_em: new Date().toISOString(),
+        observacoes: '',
       }],
     });
 

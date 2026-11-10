@@ -11,11 +11,13 @@ export default withErrors(async (request) => {
   const professionalId = Number(body['profissional_id']);
   const date = body['data'];
   const time = typeof body['horario'] === 'string' ? body['horario'] : '';
+  const observacoes = typeof body['observacoes'] === 'string' ? body['observacoes'].trim() : '';
   const serviceIds = numberList(body['servicos']);
   if (!Number.isSafeInteger(clienteId) || clienteId <= 0
     || !Number.isSafeInteger(professionalId) || professionalId <= 0
     || typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)
-    || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time) || !serviceIds) {
+    || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time) || !serviceIds
+    || observacoes.length > 255) {
     return json({ erro: 'Informe cliente, profissional, data, horário e serviços válidos.' }, 400);
   }
 
@@ -79,11 +81,11 @@ export default withErrors(async (request) => {
     }>(
       `INSERT INTO agendamentos_agendamento
          (cliente_id, profissional_id, cliente_nome, cliente_telefone, barbeiro_id,
-          data, horario, valor_total, duracao_total, criado_em, status)
-       VALUES ($1, $2, $3, $4, $5, $6::date, $7::time, $8, $9, NOW(), 'agendado')
+          data, horario, valor_total, duracao_total, observacoes, criado_em, status)
+       VALUES ($1, $2, $3, $4, $5, $6::date, $7::time, $8, $9, $10, NOW(), 'agendado')
        RETURNING id::int4 AS id, status, valor_total::text, duracao_total`,
       [clienteId, professionalId, customer.rows[0].nome, customer.rows[0].telefone,
-        legacyBarberId, date, time, totals.rows[0].preco, totals.rows[0].duracao],
+        legacyBarberId, date, time, totals.rows[0].preco, totals.rows[0].duracao, observacoes],
     );
 
     for (const service of services) {

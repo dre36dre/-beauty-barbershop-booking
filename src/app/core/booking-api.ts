@@ -41,6 +41,7 @@ export interface ServerAppointment {
   valor: number;
   data: string;
   criado_em: string;
+  observacoes: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -106,6 +107,7 @@ export class BookingApi {
     data: string;
     horario: string;
     servicos: number[];
+    observacoes?: string;
   }): Observable<CreatedBooking> {
     return this.post<CreatedBooking>('/agendamentos/', booking);
   }
