@@ -526,6 +526,9 @@
                     @for (pill of day.pills; track $index) {
                       <div class="event-pill" [class]="'pill-' + pill.colorType">
                         {{ pill.horario }} {{ pill.servico }}
+                        @if (pill.observacoes) {
+                          <span class="event-pill-note">Anotação: {{ pill.observacoes }}</span>
+                        }
                       </div>
                     }
                   </div>

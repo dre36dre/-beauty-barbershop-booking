@@ -316,6 +316,30 @@ describe('Admin Component', () => {
     newDeviceFixture.destroy();
   });
 
+  it('should refresh calendar appointments and show notes returned by the server', () => {
+    component.setTab('agendamentos');
+    http.expectOne('/api/admin/agendamentos/').flush({
+      agendamentos: [{
+        id: 987656,
+        nome: 'Cliente remoto',
+        horario: '16:00',
+        servico: 'Corte',
+        valor: 50,
+        data: store.todayDate(),
+        criado_em: new Date().toISOString(),
+        observacoes: 'Prefere atendimento sem perfume',
+      }],
+    });
+    fixture.detectChanges();
+
+    const today = new Date();
+    const todayCell = component.calendarDays.find((day) =>
+      day.isCurrentMonth && day.dayNumber === today.getDate(),
+    );
+    expect(todayCell?.pills?.[0].observacoes).toBe('Prefere atendimento sem perfume');
+    expect(fixture.nativeElement.textContent).toContain('Anotação: Prefere atendimento sem perfume');
+  });
+
   it('should toggle notifications panel and mark all alerts as read', () => {
     expect(component.showNotificationsPanel).toBe(false);
     component.toggleNotificationsPanel();

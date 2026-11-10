@@ -631,6 +631,12 @@
   text-overflow: ellipsis;
 }
 
+.event-pill-note {
+  display: block;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
 /* Cores das pílulas conforme a Imagem 3 */
 .pill-yellow {
   background-color: #f8cf78;

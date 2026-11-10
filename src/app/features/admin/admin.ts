@@ -36,6 +36,7 @@ export interface ClientRecord {
 export interface CalendarPill {
   horario: string;
   servico: string;
+  observacoes?: string;
   colorType: 'yellow' | 'pink' | 'green' | 'purple' | 'blue' | 'blocked';
 }
 
@@ -392,6 +393,7 @@ export class Admin implements OnInit, OnDestroy {
       next: ({ agendamentos }) => {
         this.notifyNewServerAppointments(agendamentos);
         this.store.replaceAppointmentsFromServer(agendamentos);
+        this.rebuildCalendar();
         this.appointmentSyncMessage = '';
         this.refreshingAppointments = false;
         this.cdr.markForCheck();
@@ -758,6 +760,7 @@ export class Admin implements OnInit, OnDestroy {
       let pills: CalendarPill[] = dayAppts.map((appt, idx) => ({
         horario: appt.horario,
         servico: appt.servico.split('+')[0].split('/')[0].trim(), // exibe só o primeiro serviço
+        observacoes: appt.observacoes,
         colorType: colorCycle[idx % colorCycle.length],
       }));
 
