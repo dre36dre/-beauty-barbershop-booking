@@ -233,6 +233,15 @@ export class Booking implements OnInit, OnDestroy {
     return this.selectedServiceDetails.reduce((total, service) => total + Number(service.preco), 0);
   }
 
+  formatDuration(minutes: number): string {
+    if (minutes < 60) return `${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes
+      ? `${hours}:${String(remainingMinutes).padStart(2, '0')} horas`
+      : `${hours} ${hours === 1 ? 'hora' : 'horas'}`;
+  }
+
   get visibleServices(): SalonService[] {
     return this.services;
   }

@@ -144,6 +144,15 @@ describe('Booking Component', () => {
     expect(fixture.nativeElement.querySelector('input[name="telefone"]')).not.toBeNull();
   });
 
+  it('should format total service duration in minutes or hours', () => {
+    expect(component.formatDuration(45)).toBe('45 min');
+    expect(component.formatDuration(60)).toBe('1 hora');
+    expect(component.formatDuration(80)).toBe('1:20 horas');
+    expect(component.formatDuration(105)).toBe('1:45 horas');
+    expect(component.formatDuration(120)).toBe('2 horas');
+    expect(component.formatDuration(210)).toBe('3:30 horas');
+  });
+
   it('should not mark fallback hours as available when the server returns no available hours', () => {
     const http = TestBed.inject(HttpTestingController);
     http.expectOne('/api/csrf/').flush({ ok: true });
