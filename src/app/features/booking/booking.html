@@ -30,7 +30,7 @@
               <div class="confirmed-service"><span>{{ service.nome }}</span><strong>{{ formatPrice(service.preco) }}</strong></div>
             }
           </div>
-          <div class="confirmed-total"><span>Subtotal</span><strong>{{ formatPrice(summary?.valor_total ?? success.valor_total) }}</strong><span>Total</span><strong>{{ formatPrice(success.valor_total) }}</strong></div>
+          <div class="confirmed-total"><span>Total</span><strong>{{ formatPrice(success.valor_total) }}</strong></div>
         </div>
         <a
           class="whatsapp-button"
@@ -114,7 +114,6 @@
                   }
                 </div>
                 @if (summary) { <p class="summary-duration">Duração total: {{ summary.duracao_total }} min</p> }
-                <div class="live-total"><span>Subtotal</span><strong>{{ formatPrice(selectedSubtotal) }}</strong></div>
                 <div class="live-total"><span>Total</span><strong>{{ formatPrice(summary?.valor_total ?? selectedSubtotal.toFixed(2)) }}</strong></div>
               } @else {
                 <p class="empty-summary">Os serviços escolhidos aparecerão aqui.</p>
